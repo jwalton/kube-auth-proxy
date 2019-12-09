@@ -38,7 +38,7 @@ export function makeWebsocketHandler(
                 return;
             }
 
-            const target = forwardTargets.findConfig(host);
+            const target = forwardTargets.findTarget(host);
             if (!target) {
                 metrics.noTargetFound.inc({ type: 'ws' });
                 log.info(`Rejecting websocket connection for service ${host}.`);
@@ -62,6 +62,14 @@ export function makeWebsocketHandler(
                     `Forwarding WS connection from user ${user.username} to service ${target.key}.`
                 );
                 metrics.forwardCount.inc({ type: 'ws' });
+
+                if (target.headers) {
+                    req.headers = {
+                        ...req.headers,
+                        ...target.headers,
+                    };
+                }
+
                 proxy.ws(req, socket, head, { target: target.wsTargetUrl }, err => {
                     if (err) {
                         metrics.backendErrorCount.inc({ type: 'ws' });

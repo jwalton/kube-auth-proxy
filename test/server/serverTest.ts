@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import express from 'express';
 import http from 'http';
 import 'mocha';
@@ -37,6 +38,9 @@ describe('Server Tests', function() {
     before(async function() {
         const app = express();
         app.get('/hello', (_req, res) => res.send('Hello World!'));
+        app.get('/authorization', (req, res) => {
+            res.json(req.headers);
+        });
 
         ({ server: testServer, port: testPort } = await makeTestServer(app));
 
@@ -157,5 +161,65 @@ describe('Server Tests', function() {
                 cookie: makeSessionCookieForUser(SESSION_SECRET, USER_JWALTON),
             },
         }).expect(404);
+    });
+
+    it('should add a bearer token', async function() {
+        const target = {
+            ...forwardTarget,
+            conditions: [],
+            bearerToken: 'mr.token',
+        };
+
+        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
+            new MockAuthModule([USER_JWALTON.username]),
+        ]);
+        await pEvent(server, 'listening');
+
+        const fetch = makeFetch(server);
+        const result = await fetch('/authorization', {
+            headers: {
+                host: 'mock.test.com',
+                cookie: makeSessionCookieForUser(SESSION_SECRET, USER_JWALTON),
+                test: 'foo',
+            },
+        }).expect(200);
+
+        const headers = await result.json();
+
+        // Should add an authorization header.
+        expect(headers.authorization).to.equal('Bearer mr.token');
+
+        // Make sure we don't clobber existing headers.
+        expect(headers.test).to.equal('foo');
+    });
+
+    it('should add a basic auth', async function() {
+        const target = {
+            ...forwardTarget,
+            conditions: [],
+            basicAuth: { username: 'guest', password: 'secret' },
+        };
+
+        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
+            new MockAuthModule([USER_JWALTON.username]),
+        ]);
+        await pEvent(server, 'listening');
+
+        const fetch = makeFetch(server);
+        const result = await fetch('/authorization', {
+            headers: {
+                host: 'mock.test.com',
+                cookie: makeSessionCookieForUser(SESSION_SECRET, USER_JWALTON),
+                test: 'foo',
+            },
+        }).expect(200);
+
+        const headers = await result.json();
+
+        // Should add an authorization header.
+        expect(headers.authorization).to.equal('Basic Z3Vlc3Q6c2VjcmV0');
+
+        // Make sure we don't clobber existing headers.
+        expect(headers.test).to.equal('foo');
     });
 });

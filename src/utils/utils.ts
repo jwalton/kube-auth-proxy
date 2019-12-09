@@ -1,5 +1,6 @@
+import http from 'http';
 import { URL } from 'url';
-import { ForwardTarget, RawKubeAuthProxyConfig } from '../types';
+import { CompiledForwardTarget, ForwardTarget, Condition } from '../types';
 
 /**
  * Converts a comma delimited list into an array.
@@ -29,7 +30,23 @@ export function generateHttpMessage(
     );
 }
 
-export function sanitizeForwardTarget(config: RawKubeAuthProxyConfig, target: ForwardTarget) {
+function addHeader(headers: http.OutgoingHttpHeaders, header: string, value: string) {
+    const existing = headers[header];
+    if (!existing) {
+        headers[header] = value;
+    } else if (typeof existing === 'string') {
+        headers[header] = [existing, value];
+    } else if (Array.isArray(existing)) {
+        existing.push(value);
+    } else {
+        throw new Error(`Can't add header ${header} to request headers with value ${existing}`);
+    }
+}
+
+export function compileForwardTarget(
+    defaultConditions: Condition[],
+    target: ForwardTarget
+): CompiledForwardTarget {
     let wsTargetUrl = target.wsTargetUrl;
     if (!wsTargetUrl) {
         const targetUrl = new URL(target.targetUrl);
@@ -37,9 +54,25 @@ export function sanitizeForwardTarget(config: RawKubeAuthProxyConfig, target: Fo
         wsTargetUrl = targetUrl.toString();
     }
 
+    const headers: { [header: string]: string | string[] } = {};
+
+    if (target.bearerToken) {
+        addHeader(headers, 'authorization', `Bearer ${target.bearerToken}`);
+    }
+
+    if (target.basicAuth) {
+        const { username, password } = target.basicAuth;
+        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
+        addHeader(headers, 'authorization', `Basic ${basicAuth}`);
+    }
+
     return {
-        ...target,
+        compiled: true,
+        key: target.key,
+        targetUrl: target.targetUrl,
         wsTargetUrl,
-        conditions: target.conditions || config.defaultConditions || [],
+        host: target.host,
+        conditions: target.conditions || defaultConditions || [],
+        headers,
     };
 }

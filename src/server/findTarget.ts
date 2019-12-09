@@ -1,10 +1,10 @@
 import express from 'express';
 import { noTargetFound } from '../metrics';
-import { ForwardTarget } from '../types';
+import { CompiledForwardTarget } from '../types';
 import * as log from '../utils/logger';
 
 export interface ForwardTargetFinder {
-    findConfig(host: string): ForwardTarget | undefined;
+    findTarget(host: string): CompiledForwardTarget | undefined;
 }
 
 /**
@@ -16,7 +16,7 @@ export interface ForwardTargetFinder {
 export function findTargetMiddleware(forwardTargets: ForwardTargetFinder): express.RequestHandler {
     return (req, res, next) => {
         const host = req.headers.host;
-        const forwardTarget = forwardTargets.findConfig(host || '');
+        const forwardTarget = forwardTargets.findTarget(host || '');
 
         if (!forwardTarget) {
             noTargetFound.inc({ type: 'http' });

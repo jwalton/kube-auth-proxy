@@ -192,6 +192,25 @@ async function serviceToConfig(
             answer.bearerToken = secretData;
         }
 
+        if (
+            annotations[annotationNames.BASIC_AUTH_USERNAME] &&
+            (annotations[annotationNames.BASIC_AUTH_PASSWORD] ||
+                annotations[annotationNames.BASIC_AUTH_PASSWORD_SECRET])
+        ) {
+            const username = annotations[annotationNames.BASIC_AUTH_USERNAME];
+            let password: string;
+            if (annotations[annotationNames.BASIC_AUTH_PASSWORD_SECRET]) {
+                const secretSpec = parseSecretSpecifier(
+                    annotations[annotationNames.BEARER_TOKEN_SECRET],
+                    `service ${namespace}/${service.metadata.name}/annotations/${annotationNames.BEARER_TOKEN_SECRET}`
+                );
+                password = await readSecret(k8sApi, secretSpec);
+            } else {
+                password = annotations[annotationNames.BASIC_AUTH_PASSWORD];
+            }
+            answer.basicAuth = { username, password };
+        }
+
         for (const mod of authModules) {
             if (mod.k8sAnnotationsToConditions) {
                 const modConditions: Condition[] = mod

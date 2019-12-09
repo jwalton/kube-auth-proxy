@@ -176,4 +176,7 @@ describe('Websocket Server Tests', function() {
 
         client.close();
     });
+
+    it('should add a bearer token');
+    it('should add a basic auth');
 });

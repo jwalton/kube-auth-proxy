@@ -123,6 +123,18 @@ be able to connect.
   value "token", and inject this as a bearer token in an "Authorization"
   header for all requests forwarded to the service.
 
+- `kube-auth-proxy/basicAuthUsername` - A username to send in basic auth
+  credentials to the target. If `kube-auth-proxy/basicAuthPasswordSecret` or
+  `kube-auth-proxy/basicAuthPassword` is not present, this will be ignored.
+- `kube-auth-proxy/basicAuthPasswordSecret` - A reference to a secret, used
+  to send basic auth credentials to the target. For example:
+
+        kube-auth-proxy/basicAuthPasswordSecret: "{secretName: 'mysecret', dataName: 'password'}"
+
+- `kube-auth-proxy/basicAuthPassword` - A password to send in basic auth
+  credentials to the target. In general you should prefer
+  `kube-auth-proxy/basicAuthPasswordSecret` over this.
+
 ### Restrictions
 
 Note that if more than one restriction is defined, they are "or"ed together.

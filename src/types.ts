@@ -93,17 +93,30 @@ export interface ForwardTarget {
     targetUrl: string;
     /** The target endpoint to forward websocket traffic to. */
     wsTargetUrl: string;
-    /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
+    /**
+     * Will forward traffic to this endpoint if the "host" header starts with
+     * this string or is this string.
+     */
     host: string;
     /** User must match one of the given conditions to be allowed access. */
     conditions: Condition[];
-    /** If present, this bearer token will be added to the request as an authorization header when it is forwarded. */
-    // TODO: Implement this.
+    /**
+     * If present, this bearer token will be added to the request as an
+     * authorization header when it is forwarded.
+     * */
     bearerToken?: string;
-    // TODO: Add basic auth.
+    /**
+     * If present, these basic auth credentials will be added to the request as
+     * an authorization header when it is forwarded.
+     */
+    basicAuth?: {
+        username: string;
+        password: string;
+    };
 }
 
 export interface CompiledForwardTarget {
+    compiled: true;
     /** A key which uniquely identifies the "source" of the ForwardTarget. */
     key: string;
     /** The target endpoint to forward http traffic to. */
@@ -115,5 +128,5 @@ export interface CompiledForwardTarget {
     /** User must match one of the given conditions to be allowed access. */
     conditions: Condition[];
     /** A list of headers to add to requests sent to this target. */
-    headers?: {};
+    headers?: { [header: string]: string | string[] };
 }

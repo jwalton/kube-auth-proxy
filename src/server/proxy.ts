@@ -23,6 +23,14 @@ export default function proxyMiddleware(): express.RequestHandler {
 
         log.debug(`Forwarding request to ${forwardTarget.targetUrl}`);
         forwardCount.inc({ type: 'http' });
+
+        if (forwardTarget.headers) {
+            req.headers = {
+                ...req.headers,
+                ...forwardTarget.headers,
+            };
+        }
+
         proxy.web(req, res, { target: forwardTarget.targetUrl }, err => {
             if (err) {
                 next(err);
