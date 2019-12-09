@@ -13,12 +13,11 @@
     "scripts": {
         "start": "npm run build && NODE_ENV=development node ./bin/kube-auth-proxy",
         "test": "npm run build && npm run lint && npm run test:unittest",
-        "precommit:test": "npm run build && lint-staged && npm run precommit:unittest",
+        "test:precommit": "npm run build && lint-staged",
         "build": "tsc",
         "build:minikube": "eval $(minikube docker-env) && docker build --target release --tag jwalton/kube-auth-proxy . && eval $(minikube docker-env -u)",
         "clean": "rm -rf dist types coverage",
         "test:unittest": "tsc -p test && nyc mocha 'test/**/*.@(ts|tsx|js|jsx)'",
-        "precommit:unittest": "tsc -p test && mocha --reporter progress 'test/**/*.@(ts|tsx|js|jsx)'",
         "lint": "npm run lint:source && npm run lint:tests",
         "lint:source": "eslint --ext .ts --ext .tsx src",
         "lint:tests": "eslint --ext .ts --ext .tsx test",
@@ -78,6 +77,7 @@
         "eslint": "^6.7.1",
         "eslint-config-prettier": "^6.7.0",
         "husky": "^3.1.0",
+        "lint-staged": "^9.5.0",
         "mocha": "^6.2.2",
         "nyc": "^14.1.1",
         "p-event": "^4.1.0",
@@ -91,7 +91,7 @@
     },
     "husky": {
         "hooks": {
-            "pre-commit": "pretty-quick --staged && npm run test:pre-commit"
+            "pre-commit": "pretty-quick --staged && npm run test:precommit"
         }
     },
     "dependencies": {

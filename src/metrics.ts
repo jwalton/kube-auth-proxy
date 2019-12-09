@@ -40,7 +40,7 @@ export function startMetricsServer(metricsPort: number) {
     const app = express();
     app.get('/metrics', metricsEndpoint());
     app.listen(metricsPort, () => {
-        log.info(`Metrics server listening on port ${metricsPort}`);
+        log.info(`Metrics server available on http://localhost:${metricsPort}/metrics`);
     });
 
     return app;

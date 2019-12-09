@@ -1,8 +1,19 @@
 import * as k8s from '@kubernetes/client-node';
+import prometheus from 'prom-client';
 import { AuthModule } from './authModules/AuthModule';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
 import { ForwardTarget, SanitizedKubeAuthProxyConfig } from './types';
 import * as log from './utils/logger';
+
+export const servicesProxied = new prometheus.Gauge({
+    name: 'kube_auth_proxy_forwarded_targets',
+    help: 'Number of services being tracked by kube-auth-proxy.',
+});
+
+export const serviceConflicts = new prometheus.Gauge({
+    name: 'kube_auth_proxy_target_conflicts',
+    help: 'Number of services being ignored because they conflict with other services.',
+});
 
 /**
  * Keeps track of all configured ForwardTargets.
@@ -32,16 +43,30 @@ export default class ForwardTargetManager {
             this._configWatch = new ConfigWatcher(config, authModules, options.kubeConfig, options);
 
             this._configWatch.on('updated', config => {
+                if (!this._targetByKey[config.key]) {
+                    log.info(`Adding target from k8s ${config.host} => ${config.targetUrl}`);
+                }
                 this._targetByKey[config.key] = config;
                 this._rebuildConfigsByHost();
             });
             this._configWatch.on('deleted', key => {
+                if (this._targetByKey[key]) {
+                    log.info(`Removing target from k8s ${key}`);
+                }
                 delete this._targetByKey[key];
                 this._rebuildConfigsByHost();
+            });
+
+            this._configWatch.on('error', err => {
+                log.error(err, 'Unexpected error from configuration watcher.');
+                process.exit(1);
             });
         }
 
         for (const defaultTarget of config.defaultTargets || []) {
+            log.info(
+                `Adding target from static configuration ${defaultTarget.host} => ${defaultTarget.targetUrl}`
+            );
             this._targetByKey[defaultTarget.key] = defaultTarget;
         }
         this._rebuildConfigsByHost();
@@ -64,6 +89,9 @@ export default class ForwardTargetManager {
     private _rebuildConfigsByHost() {
         this._targetsByHost = {};
 
+        let count = 0;
+        let conflicts = 0;
+
         for (const key of Object.keys(this._targetByKey)) {
             const config = this._targetByKey[key];
 
@@ -73,13 +101,18 @@ export default class ForwardTargetManager {
                     : `${config.host}.${this._domain}`;
 
             if (this._targetsByHost[host]) {
+                conflicts++;
                 log.warn(
                     `Configuration from ${this._targetsByHost[host].key} conflicts with ${config.key}`
                 );
             } else {
+                count++;
                 this._targetsByHost[host] = config;
             }
         }
+
+        servicesProxied.set(count);
+        serviceConflicts.set(conflicts);
     }
 
     /**
