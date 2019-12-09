@@ -6,4 +6,4 @@ node_modules
 /npm-debug.log
 /yarn-error.log
 /config/kube-auth-proxy.yaml
-/example/kube-auth-proxy-minikube-priv.yaml
+/examples/kube-auth-proxy-minikube-priv.yaml

@@ -169,7 +169,7 @@ members of "myorg" will be allowed to access you service).
 $ eval $(minikube docker-env)
 $ docker build --target release --tag jwalton/kube-auth-proxy .
 $ eval $(minikube docker-env -u)
-$ kubectl apply -f ./example/kube-auth-proxy-minikube.yaml
+$ kubectl apply -f ./examples/kube-auth-proxy-minikube.yaml
 $ kubectl --namespace kube-system port-forward svc/kube-auth-proxy 5050:5050
 ```
 
