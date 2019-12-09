@@ -1,0 +1,9 @@
+.git
+.github
+.nyc_output
+config
+coverage
+dist
+examples
+node_modules
+test
