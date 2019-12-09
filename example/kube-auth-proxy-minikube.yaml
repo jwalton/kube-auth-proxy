@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-auth-proxy
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: kube-auth-proxy
+rules:
+  - apiGroups: ['']
+    resources: ['services']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: ['']
+    resources: ['secrets']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: ['']
+    resources: ['namespaces']
+    verbs: ['get', 'watch', 'list']
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-auth-proxy-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-auth-proxy
+subjects:
+  - kind: ServiceAccount
+    name: kube-auth-proxy
+    namespace: kube-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-auth-proxy-config
+  namespace: kube-system
+type: Opaque
+stringData:
+  kube-auth-proxy.yaml: |
+    domain: localhost:5050
+    auth:
+      github:
+        clientID: 'CLIENT-ID-HERE'
+        clientSecret: 'CLIENT-SECRET-HERE'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-auth-proxy
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-auth-proxy
+  template:
+    metadata:
+      labels:
+        app: kube-auth-proxy
+    spec:
+      serviceAccountName: kube-auth-proxy
+      containers:
+        - name: kube-auth-proxy
+          image: jwalton/kube-auth-proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5050
+            - name: metrics
+              containerPort: 5051
+          volumeMounts:
+            - name: config
+              mountPath: /opt/app/config
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: kube-auth-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-auth-proxy
+  namespace: kube-system
+  labels:
+    app: kube-auth-proxy
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 5050
+      targetPort: http
+    - name: metrics
+      port: 5051
+      targetPort: metrics
+  selector:
+    app: kube-auth-proxy

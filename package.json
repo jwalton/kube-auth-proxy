@@ -1,0 +1,115 @@
+{
+    "name": "kube-auth-proxy",
+    "version": "0.0.0-semantic-release",
+    "description": "A kubernetes aware replacement for oauth2_proxy.",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist/**/*"
+    ],
+    "bin": {
+        "kube-auth-proxy": "./bin/kube-auth-proxy"
+    },
+    "scripts": {
+        "start": "npm run build && NODE_ENV=development node ./bin/kube-auth-proxy",
+        "test": "npm run build && npm run lint && npm run test:unittest",
+        "precommit:test": "npm run build && lint-staged && npm run precommit:unittest",
+        "build": "tsc",
+        "build:minikube": "eval $(minikube docker-env) && docker build --target release --tag jwalton/kube-auth-proxy . && eval $(minikube docker-env -u)",
+        "clean": "rm -rf dist types coverage",
+        "test:unittest": "tsc -p test && nyc mocha 'test/**/*.@(ts|tsx|js|jsx)'",
+        "precommit:unittest": "tsc -p test && mocha --reporter progress 'test/**/*.@(ts|tsx|js|jsx)'",
+        "lint": "npm run lint:source && npm run lint:tests",
+        "lint:source": "eslint --ext .ts --ext .tsx src",
+        "lint:tests": "eslint --ext .ts --ext .tsx test",
+        "prepare": "npm run build",
+        "prepublishOnly": "npm run build && npm test",
+        "semantic-release": "semantic-release"
+    },
+    "lint-staged": {
+        "src/**/*.ts": [
+            "eslint --ext ts --ext tsx"
+        ],
+        "test/**/*.ts": [
+            "eslint --ext ts --ext tsx"
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jwalton/kube-auth-proxy.git"
+    },
+    "keywords": [
+        "kubernetes",
+        "k8s",
+        "auth",
+        "oauth",
+        "oauth2",
+        "proxy",
+        "oauth2_proxy"
+    ],
+    "author": {
+        "name": "Jason Walton",
+        "email": "dev@lucid.thedreaming.org",
+        "url": "https://thedreaming.org"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/exegesis-js/jwalton/kube-auth-proxy/issues"
+    },
+    "homepage": "https://github.com/jwalton/kube-auth-proxy#readme",
+    "devDependencies": {
+        "@types/chai": "^4.2.5",
+        "@types/chai-as-promised": "^7.1.2",
+        "@types/client-sessions": "^0.8.0",
+        "@types/express": "^4.17.2",
+        "@types/http-proxy": "^1.17.2",
+        "@types/lodash": "^4.14.149",
+        "@types/mocha": "^5.2.7",
+        "@types/node": "^10.17.6",
+        "@types/passport": "^1.0.2",
+        "@types/passport-github": "^1.1.5",
+        "@types/sinon": "^7.5.1",
+        "@types/yargs": "^13.0.3",
+        "@typescript-eslint/eslint-plugin": "^2.9.0",
+        "@typescript-eslint/parser": "^2.9.0",
+        "chai": "^4.2.0",
+        "chai-as-promised": "^7.1.1",
+        "coveralls": "^3.0.9",
+        "eslint": "^6.7.1",
+        "eslint-config-prettier": "^6.7.0",
+        "husky": "^3.1.0",
+        "mocha": "^6.2.2",
+        "nyc": "^14.1.1",
+        "p-event": "^4.1.0",
+        "prettier": "^1.19.1",
+        "pretty-quick": "^2.0.1",
+        "semantic-release": "^15.13.31",
+        "sinon": "^7.5.0",
+        "supertest-fetch": "^1.4.1",
+        "ts-node": "^8.5.2",
+        "typescript": "^3.7.2"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "pretty-quick --staged && npm run test:pre-commit"
+        }
+    },
+    "dependencies": {
+        "@kubernetes/client-node": "^0.11.0",
+        "@octokit/rest": "^16.35.0",
+        "client-sessions": "^0.8.0",
+        "cookies": "^0.8.0",
+        "express": "^4.17.1",
+        "http-proxy": "^1.18.0",
+        "js-yaml": "^3.13.1",
+        "lodash": "^4.17.15",
+        "passport": "^0.4.0",
+        "passport-github": "^1.1.0",
+        "prom-client": "^11.5.3",
+        "promise-tools": "^2.1.0",
+        "winston": "^3.2.1",
+        "winston-format-debug": "^1.0.3",
+        "ws": "^6.1.0",
+        "yargs": "^15.0.2"
+    }
+}
