@@ -2,14 +2,22 @@ import clientSessions from 'client-sessions';
 import Cookies from 'cookies';
 import http from 'http';
 import { SanitizedKubeAuthProxyConfig } from '../types';
+import express from 'express';
 
 /**
  * Returns an express-style `function(req, res, next)` which will handle the
  * request if the user is not logged in, and will pass the requets through
  * otherwise.
  */
-export function sessionMiddleware(config: SanitizedKubeAuthProxyConfig) {
-    return clientSessions(getClientSessionOpts(config));
+export function sessionMiddleware(config: SanitizedKubeAuthProxyConfig): express.RequestHandler {
+    const clientSessionsMiddleware = clientSessions(getClientSessionOpts(config));
+    return (req, res, next) => {
+        if (req.secure || req.headers['x-forwarded-proto'] === 'https') {
+            // Workaround for http://github.com/mozilla/node-client-sessions/issues/101
+            (req.connection as any).proxySecure = true;
+        }
+        clientSessionsMiddleware(req, res, next);
+    };
 }
 
 export function wsSessionMiddleware(config: SanitizedKubeAuthProxyConfig) {
@@ -17,6 +25,11 @@ export function wsSessionMiddleware(config: SanitizedKubeAuthProxyConfig) {
 
     return function session(req: http.IncomingMessage, next: (err?: Error) => void) {
         let done = false;
+
+        if (req.headers['x-forwarded-proto'] === 'https') {
+            // Workaround for http://github.com/mozilla/node-client-sessions/issues/101
+            (req.connection as any).proxySecure = true;
+        }
 
         try {
             const cookies = new Cookies(req, {} as any);
