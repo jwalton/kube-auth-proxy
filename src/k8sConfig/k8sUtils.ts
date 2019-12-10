@@ -1,10 +1,16 @@
 import * as k8s from '@kubernetes/client-node';
 
-export interface K8sSecretSpecifier {
-    namespace: string;
-    secretName: string;
-    dataName: string;
-}
+export type K8sSecretSpecifier =
+    | {
+          namespace: string;
+          secretName: string;
+          dataName: string;
+      }
+    | {
+          namespace: string;
+          secretRegex: RegExp;
+          dataName: string;
+      };
 
 /**
  * Parse and validate a "secret specificier".
@@ -13,7 +19,7 @@ export interface K8sSecretSpecifier {
  * @param source - the location where this specifier was read from (used in error messages).
  */
 export function parseSecretSpecifier(spec: string, source: string) {
-    let secretSpec: K8sSecretSpecifier;
+    let secretSpec: any;
     try {
         secretSpec = JSON.parse(spec);
     } catch (err) {
@@ -23,23 +29,53 @@ export function parseSecretSpecifier(spec: string, source: string) {
     if (!secretSpec.namespace) {
         throw new Error(`Missing namespace in ${source}`);
     }
-    if (!secretSpec.secretName) {
+
+    if (!secretSpec.secretName && !secretSpec.secretRegex) {
         throw new Error(`Missing secretName in ${source}`);
     }
+
+    if (typeof secretSpec.secretRegex === 'string') {
+        try {
+            secretSpec.secretRegex = new RegExp(secretSpec.secretRegex);
+        } catch (err) {
+            throw new Error(`Invalid secretRegex in ${source}: ${err.toString()}`);
+        }
+    } else if (secretSpec.secretRegex instanceof RegExp) {
+        // OK
+    } else {
+        throw new Error(`Invalid secretRegex in ${source}`);
+    }
+
     if (!secretSpec.dataName) {
         throw new Error(`Missing dataName in ${source}`);
     }
-    return secretSpec;
+    return secretSpec as K8sSecretSpecifier;
 }
 
 /**
  * Get the value of a secret from Kubernetes.
  */
 export async function readSecret(k8sApi: k8s.CoreV1Api, secret: K8sSecretSpecifier) {
-    const name = `${secret.namespace}/${secret.secretName}`;
+    const name = `${secret.namespace}/${
+        'secretName' in secret ? secret.secretName : secret.secretRegex
+    }`;
 
-    const secretObj = await k8sApi
-        .readNamespacedSecret(secret.secretName, secret.namespace)
+    const secretObj =
+        'secretName' in secret
+            ? await getSecret(k8sApi, secret.namespace, secret.secretName)
+            : await getSecretFromRegex(k8sApi, secret.namespace, secret.secretRegex);
+
+    const base64Data = secretObj.data?.[secret.dataName];
+    if (!base64Data) {
+        throw new Error(`Secret ${name} has no data named ${secret.dataName}`);
+    }
+    return base64Data;
+}
+
+function getSecret(k8sApi: k8s.CoreV1Api, namespace: string, secretName: string) {
+    return k8sApi
+        .readNamespacedSecret(secretName, namespace)
+        .then(response => response.body)
         .catch(err => {
             if (err?.response?.statusCode === 404) {
                 throw new Error(`Secret ${name} not found.`);
@@ -47,10 +83,17 @@ export async function readSecret(k8sApi: k8s.CoreV1Api, secret: K8sSecretSpecifi
                 throw new Error(`Error fetching secret ${name} from Kubernetes.`);
             }
         });
+}
 
-    const base64Data = secretObj.body.data?.[secret.dataName];
-    if (!base64Data) {
-        throw new Error(`Secret ${name} has no data named ${secret.dataName}`);
+async function getSecretFromRegex(k8sApi: k8s.CoreV1Api, namespace: string, secretRegex: RegExp) {
+    const secrets = await k8sApi.listNamespacedSecret(namespace);
+    for (const secret of secrets.body.items) {
+        if (secret.metadata?.name && secretRegex.test(secret.metadata.name)) {
+            return secret;
+        }
     }
-    return base64Data;
+
+    throw new Error(
+        `Could not find secret in namespace ${namespace} matching regex ${secretRegex}`
+    );
 }
