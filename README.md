@@ -4,6 +4,8 @@
 ![Build Status](https://github.com/jwalton/kube-auth-proxy.svg)
 [![Coverage Status](https://coveralls.io/repos/jwalton/kube-auth-proxy/badge.svg)](https://coveralls.io/r/jwalton/kube-auth-proxy)
 
+Securely expose your private Kubernetes services.
+
 ## Description
 
 kube-auth-proxy is a Kubernetes-aware authorizing reverse proxy, designed as
@@ -30,6 +32,26 @@ The basic idea is:
 Let's suppose we have an internal service in our cluster, say prometheus, and
 we want to expose it at prom.internal.mydomain.com.
 
+### Pick a Domain Name
+
+We're going to expose all your internal services under a single domain name.
+For example, if you pick "internal.MY-DOMAIN.COM", then when you expose the
+Kubernetes dashboard you might put it under "dashboard.internal.MY-DOMAIN.COM".
+
+GitHub wants a single domain name to use for OAuth callbacks (we'll use
+auth.internal.MY-DOMAIN.COM in this example), which means when we set a cookie,
+we're going to set it for some parent of that domain, which in turn means we're
+going to put all our other services under that same domain.
+
+### Create a Github Oauth App
+
+Go to your GitHub organization, click on "Settings" then pick "OAuth Apps" on
+the left. Click the "New OAuth App" button in the upper right corner. In
+the "Authorization callback URL", put
+`http://auth.internal.MY-DOMAIN.COM/kube-auth-proxy/github/callback`. Fill in
+the rest of these fields however you like. When you create your app, take note
+of the client ID and client secret; you'll need these in the next step.
+
 ### Installation and Configuration
 
 Start with `examples/kube-auth-proxy-github.yaml`. Download this file, and update
@@ -44,8 +66,9 @@ $ kubectl apply -f `./kube-auth-proxy-github.yaml`.
 
 We need to create an ingress which forwards "\*.internal.MY-DOMAN.COM" to our
 new service. Unlike with oauth2-proxy or other services, kube-auth-proxy doesn't
-rely on features built into nginx-ingress, and should work with any ingress.
-For example, on AWS an ALB ingress could be as simple as
+rely on features built into nginx-ingress, and should work with any ingress,
+include the ALB ingress or with Traefik. For example, on AWS an ALB ingress
+could be as simple as:
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -69,7 +92,9 @@ spec:
 ```
 
 This will create an ALB listening for https traffic on 443, and will forward all
-traffic to kube-auth-proxy.
+traffic to kube-auth-proxy. We need to set up DNS and certificates, but again,
+this is dependent on your specific setup. On AWS if you're using external-dns,
+it will configure your A-Records for you in Route 53.
 
 ### Annotate our Internal Service
 
@@ -85,10 +110,11 @@ metadata:
   annotations:
     # Expose this as prometheus.internal.MY-DOMAIN.COM
     kube-auth-proxy/host: prometheus
+    # Forward traffic to Prometheus service's "web" port.
     kube-auth-proxy/targetPort: web
-    # Only allow github users in the "devOps" team in the "your-org-name"
+    # Only allow github users in the "devOps" team in the "MY-ORG-HERE"
     # organization to access this service.
-    kube-auth-proxy/githubAllowedTeams: devOps@your-org-name
+    kube-auth-proxy/githubAllowedTeams: devOps@MY-ORG-HERE
 spec:
   type: ClusterIP
   ports:

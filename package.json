@@ -1,7 +1,7 @@
 {
     "name": "kube-auth-proxy",
     "version": "0.1.0",
-    "description": "A kubernetes aware authenticating reverse-proxy.",
+    "description": "Securely expose your private Kubernetes services.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
