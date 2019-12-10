@@ -6,7 +6,8 @@ import pEvent from 'p-event';
 import { makeFetch } from 'supertest-fetch';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
 import { startServer } from '../../src/server';
-import { ForwardTarget, SanitizedKubeAuthProxyConfig } from '../../src/types';
+import { CompiledForwardTarget } from '../../src/Targets';
+import { SanitizedKubeAuthProxyConfig } from '../../src/types';
 import { makeSessionCookieForUser } from '../fixtures/makeSessionCookie';
 import MockAuthModule from '../fixtures/MockAuthModule';
 import { mockForwardTargetManager } from '../fixtures/mockForwardTargetManager';
@@ -33,7 +34,7 @@ describe('Server Tests', function() {
     let testServer: http.Server;
     let testPort: number;
     let server: http.Server | undefined;
-    let forwardTarget: ForwardTarget;
+    let forwardTarget: CompiledForwardTarget;
 
     before(async function() {
         const app = express();
@@ -45,11 +46,12 @@ describe('Server Tests', function() {
         ({ server: testServer, port: testPort } = await makeTestServer(app));
 
         forwardTarget = {
+            compiled: true,
             host: 'mock.test.com',
             key: 'mock',
             targetUrl: `http://localhost:${testPort}`,
             wsTargetUrl: `ws://localhost:${testPort}`,
-            conditions: [{ type: 'mock-auth' } as any],
+            conditions: [{ allowedUsers: USER_JWALTON.username } as any],
         };
     });
 
@@ -65,7 +67,7 @@ describe('Server Tests', function() {
 
     it('should require authentication', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -75,7 +77,7 @@ describe('Server Tests', function() {
 
     it('should redirect to login screen', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -85,7 +87,7 @@ describe('Server Tests', function() {
 
     it('should proxy a request for an authorized user', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -100,7 +102,7 @@ describe('Server Tests', function() {
 
     it('should login a user', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -120,7 +122,7 @@ describe('Server Tests', function() {
         };
 
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -134,8 +136,12 @@ describe('Server Tests', function() {
     });
 
     it('should deny a request for an unauthorized user', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule(['someone-else']),
+        const myForwardTarget = {
+            ...forwardTarget,
+            conditions: [{ allowedUsers: 'someone-else' } as any],
+        };
+        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([myForwardTarget]), [
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -150,7 +156,7 @@ describe('Server Tests', function() {
 
     it('should return a 404 if the host header does not resolve to a target', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -163,15 +169,17 @@ describe('Server Tests', function() {
         }).expect(404);
     });
 
-    it('should add a bearer token', async function() {
-        const target = {
+    it('should add a authorization header', async function() {
+        const target: CompiledForwardTarget = {
             ...forwardTarget,
             conditions: [],
-            bearerToken: 'mr.token',
+            headers: {
+                authorization: 'Bearer mr.token',
+            },
         };
 
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -188,36 +196,6 @@ describe('Server Tests', function() {
 
         // Should add an authorization header.
         expect(headers.authorization).to.equal('Bearer mr.token');
-
-        // Make sure we don't clobber existing headers.
-        expect(headers.test).to.equal('foo');
-    });
-
-    it('should add a basic auth', async function() {
-        const target = {
-            ...forwardTarget,
-            conditions: [],
-            basicAuth: { username: 'guest', password: 'secret' },
-        };
-
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
-            new MockAuthModule([USER_JWALTON.username]),
-        ]);
-        await pEvent(server, 'listening');
-
-        const fetch = makeFetch(server);
-        const result = await fetch('/authorization', {
-            headers: {
-                host: 'mock.test.com',
-                cookie: makeSessionCookieForUser(SESSION_SECRET, USER_JWALTON),
-                test: 'foo',
-            },
-        }).expect(200);
-
-        const headers = await result.json();
-
-        // Should add an authorization header.
-        expect(headers.authorization).to.equal('Basic Z3Vlc3Q6c2VjcmV0');
 
         // Make sure we don't clobber existing headers.
         expect(headers.test).to.equal('foo');

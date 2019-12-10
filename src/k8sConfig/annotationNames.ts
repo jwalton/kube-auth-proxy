@@ -4,3 +4,6 @@ export const BEARER_TOKEN_SECRET = 'kube-auth-proxy/bearerTokenSecret';
 export const BASIC_AUTH_USERNAME = 'kube-auth-proxy/basicAuthUsername';
 export const BASIC_AUTH_PASSWORD = 'kube-auth-proxy/basicAuthPassword';
 export const BASIC_AUTH_PASSWORD_SECRET = 'kube-auth-proxy/basicAuthPasswordSecret';
+export const GITHUB_ALLOWED_ORGS = 'kube-auth-proxy/githubAllowedOrganizations';
+export const GITHUB_ALLOWED_TEAMS = 'kube-auth-proxy/githubAllowedTeams';
+export const GITHUB_ALLOWED_USERS = 'kube-auth-proxy/githubAllowedUsers';

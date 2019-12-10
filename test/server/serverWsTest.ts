@@ -7,7 +7,8 @@ import pEvent from 'p-event';
 import WebSocket from 'ws';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
 import { startServer } from '../../src/server';
-import { ForwardTarget, SanitizedKubeAuthProxyConfig } from '../../src/types';
+import { CompiledForwardTarget } from '../../src/Targets';
+import { SanitizedKubeAuthProxyConfig } from '../../src/types';
 import { makeSessionCookieForUser } from '../fixtures/makeSessionCookie';
 import MockAuthModule from '../fixtures/MockAuthModule';
 import { mockForwardTargetManager } from '../fixtures/mockForwardTargetManager';
@@ -35,7 +36,7 @@ describe('Websocket Server Tests', function() {
     let testPort: number;
     let server: http.Server | undefined;
     let wss: WebSocket.Server;
-    let forwardTarget: ForwardTarget;
+    let forwardTarget: CompiledForwardTarget;
     let client: WebSocket | undefined;
 
     before(async function() {
@@ -45,11 +46,13 @@ describe('Websocket Server Tests', function() {
         ({ server: testServer, port: testPort, wss } = await makeTestServer(app));
 
         forwardTarget = {
-            host: 'mock.test.com',
+            compiled: true,
             key: 'mock',
             targetUrl: `http://localhost:${testPort}`,
             wsTargetUrl: `ws://localhost:${testPort}`,
-            conditions: [{ type: 'mock-auth' } as any],
+            /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
+            host: 'mock.test.com',
+            conditions: [{ allowedUsers: [USER_JWALTON.username] } as any],
         };
 
         wss.on('connection', connection => {
@@ -72,7 +75,7 @@ describe('Websocket Server Tests', function() {
 
     it('should require authentication', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -92,7 +95,7 @@ describe('Websocket Server Tests', function() {
 
     it('should proxy a request for an authorized user', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -117,7 +120,7 @@ describe('Websocket Server Tests', function() {
         };
 
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -136,8 +139,12 @@ describe('Websocket Server Tests', function() {
     });
 
     it('should deny a request for an unauthorized user', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule(['someone-else']),
+        const myForwardTarget = {
+            ...forwardTarget,
+            conditions: [{ allowedUsers: 'someone-else' } as any],
+        };
+        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([myForwardTarget]), [
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 
@@ -158,7 +165,7 @@ describe('Websocket Server Tests', function() {
 
     it('should return a 404 if the host header does not resolve to a target', async function() {
         server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
-            new MockAuthModule([USER_JWALTON.username]),
+            new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
 

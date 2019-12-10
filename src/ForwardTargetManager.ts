@@ -1,11 +1,9 @@
 import * as k8s from '@kubernetes/client-node';
 import prometheus from 'prom-client';
-import { AuthModule } from './authModules/AuthModule';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
 import { ForwardTargetFinder } from './server/findTarget';
-import { CompiledForwardTarget, SanitizedKubeAuthProxyConfig } from './types';
+import { CompiledForwardTarget } from './Targets';
 import * as log from './utils/logger';
-import { compileForwardTarget } from './utils/utils';
 
 export const servicesProxied = new prometheus.Gauge({
     name: 'kube_auth_proxy_forwarded_targets',
@@ -31,27 +29,23 @@ export default class ForwardTargetManager implements ForwardTargetFinder {
     private _targetsByHost: { [host: string]: CompiledForwardTarget } = {};
 
     constructor(
-        config: SanitizedKubeAuthProxyConfig,
-        authModules: AuthModule[],
+        defaultTargets: CompiledForwardTarget[],
         options: {
-            kubeConfig?: k8s.KubeConfig;
             domain: string;
+            kubeConfig?: k8s.KubeConfig;
             namespaces?: string[];
         }
     ) {
         this._domain = options.domain;
 
         if (options.kubeConfig) {
-            this._configWatch = new ConfigWatcher(config, authModules, options.kubeConfig, options);
+            this._configWatch = new ConfigWatcher(options.kubeConfig, options);
 
             this._configWatch.on('updated', target => {
                 if (!this._targetByKey[target.key]) {
                     log.info(`Adding target from k8s ${target.host} => ${target.targetUrl}`);
                 }
-                this._targetByKey[target.key] = compileForwardTarget(
-                    config.defaultConditions,
-                    target
-                );
+                this._targetByKey[target.key] = target;
                 this._rebuildConfigsByHost();
             });
             this._configWatch.on('deleted', key => {
@@ -68,14 +62,11 @@ export default class ForwardTargetManager implements ForwardTargetFinder {
             });
         }
 
-        for (const defaultTarget of config.defaultTargets || []) {
+        for (const defaultTarget of defaultTargets || []) {
             log.info(
                 `Adding target from static configuration ${defaultTarget.host} => ${defaultTarget.targetUrl}`
             );
-            this._targetByKey[defaultTarget.key] = compileForwardTarget(
-                config.defaultConditions,
-                defaultTarget
-            );
+            this._targetByKey[defaultTarget.key] = defaultTarget;
         }
         this._rebuildConfigsByHost();
     }

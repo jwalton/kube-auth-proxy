@@ -5,11 +5,6 @@ import GitHubStrategy from 'passport-github';
 import '../server/express-types';
 import { Condition, KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
-import { parseCommaDelimitedList } from '../utils/utils';
-
-const GITHUB_ALLOWED_ORGS = 'kube-auth-proxy/githubAllowedOrganizations';
-const GITHUB_ALLOWED_TEAMS = 'kube-auth-proxy/githubAllowedTeams';
-const GITHUB_ALLOWED_USERS = 'kube-auth-proxy/githubAllowedUsers';
 
 // Refresh the user's teams and orgs every 5 minutes.
 const USER_REFRESH_INTERVAL = 1000 * 60 * 5;
@@ -33,42 +28,6 @@ export function isEnabled(config: SanitizedKubeAuthProxyConfig) {
 
 export function getLoginButton(_config: SanitizedKubeAuthProxyConfig, targetUrl: string): string {
     return `<a href="/kube-auth-proxy/github?redirect=${targetUrl}">Login with Github</a>`;
-}
-
-export function k8sAnnotationsToConditions(
-    _config: SanitizedKubeAuthProxyConfig,
-    annotations: { [key: string]: string }
-) {
-    const answer: Condition[] = [];
-
-    const githubAllowedOrgs = annotations[GITHUB_ALLOWED_ORGS];
-    if (githubAllowedOrgs) {
-        answer.push({
-            githubAllowedOrganizations: parseCommaDelimitedList(githubAllowedOrgs).map(str =>
-                str.toLowerCase()
-            ),
-        });
-    }
-
-    const githubAllowedTeams = annotations[GITHUB_ALLOWED_TEAMS];
-    if (githubAllowedTeams) {
-        answer.push({
-            githubAllowedTeams: parseCommaDelimitedList(githubAllowedTeams).map(str =>
-                str.toLowerCase()
-            ),
-        });
-    }
-
-    const githubAllowedUsers = annotations[GITHUB_ALLOWED_USERS];
-    if (githubAllowedUsers) {
-        answer.push({
-            githubAllowedUsers: parseCommaDelimitedList(githubAllowedUsers).map(str =>
-                str.toLowerCase()
-            ),
-        });
-    }
-
-    return answer;
 }
 
 /**

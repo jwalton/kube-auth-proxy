@@ -1,7 +1,8 @@
 import express from 'express';
 import http from 'http';
 import passport from 'passport';
-import { Condition, ForwardTarget, SanitizedKubeAuthProxyConfig } from '../types';
+import { Condition, SanitizedKubeAuthProxyConfig } from '../types';
+import { CompiledForwardTarget } from '../Targets';
 
 export interface AuthModule {
     /**
@@ -39,22 +40,6 @@ export interface AuthModule {
     ): express.RequestHandler;
 
     /**
-     * Given a set of annotations, return zero or more Condition objects.
-     *
-     * Each object returned represents a set of requirements to access this service.
-     * For a given request, these will be passed to `this.authorize()`, and if any
-     * one of the returned objects is authorized, the request will be allowed
-     * through.
-     *
-     * If there are no annotations for this AuthModule, this may return sensible
-     * defaults based on the `config`.
-     */
-    k8sAnnotationsToConditions?(
-        config: SanitizedKubeAuthProxyConfig,
-        annotations: { [key: string]: string }
-    ): Condition[];
-
-    /**
      * Returns true if the currently authenticated meets the conditions in
      * `Condition`.  This will be called for each AuthModule, for each conditon.
      * All AuthModules must return true for a condition to pass.
@@ -68,7 +53,7 @@ export interface AuthModule {
     authorize?(
         user: Express.User,
         condition: Condition,
-        target: ForwardTarget,
+        target: CompiledForwardTarget,
         req: http.IncomingMessage
     ): boolean;
 }

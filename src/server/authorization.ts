@@ -1,7 +1,7 @@
 import http from 'http';
 import { AuthModule } from '../authModules/AuthModule';
 import { notAuthorizedCount } from '../metrics';
-import { ForwardTarget } from '../types';
+import { CompiledForwardTarget } from '../Targets';
 
 export function authorizationMiddleware(authModules: AuthModule[]) {
     const mw = wsAuthorizationMiddleware(authModules);
@@ -12,7 +12,7 @@ export function authorizationMiddleware(authModules: AuthModule[]) {
 
 export function wsAuthorizationMiddleware(authModules: AuthModule[]) {
     function authorizeTarget(req: http.IncomingMessage) {
-        const { user, target } = req as { user?: Express.User; target?: ForwardTarget };
+        const { user, target } = req as { user?: Express.User; target?: CompiledForwardTarget };
         if (!user) {
             throw new Error("Attempted to authorize a user, but there's no user.");
         }

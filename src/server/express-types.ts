@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { CompiledForwardTarget, KubeAuthProxyUser } from '../types';
+import { CompiledForwardTarget } from '../Targets';
+import { KubeAuthProxyUser } from '../types';
 
 declare global {
     namespace Express {

@@ -1,3 +1,4 @@
+import { RawForwardTarget } from './Targets';
 import { LogLevel } from './utils/logger';
 
 export interface KubeAuthProxyUser {
@@ -66,7 +67,7 @@ export interface RawKubeAuthProxyConfig {
     };
 
     defaultConditions?: Condition[];
-    defaultTargets?: ForwardTarget[];
+    defaultTargets?: RawForwardTarget[];
 
     logLevel?: LogLevel;
 }
@@ -77,56 +78,11 @@ export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {
     sessionSecret: string;
     secureCookies: boolean;
     defaultConditions: Condition[];
-    defaultTargets: ForwardTarget[];
+    defaultTargets: RawForwardTarget[];
 };
 
 export interface Condition {
     githubAllowedOrganizations?: string[];
     githubAllowedTeams?: string[];
     githubAllowedUsers?: string[];
-}
-
-export interface ForwardTarget {
-    /** A key which uniquely identifies the "source" of the ForwardTarget. */
-    key: string;
-    /** The target endpoint to forward http traffic to. */
-    targetUrl: string;
-    /** The target endpoint to forward websocket traffic to. */
-    wsTargetUrl: string;
-    /**
-     * Will forward traffic to this endpoint if the "host" header starts with
-     * this string or is this string.
-     */
-    host: string;
-    /** User must match one of the given conditions to be allowed access. */
-    conditions: Condition[];
-    /**
-     * If present, this bearer token will be added to the request as an
-     * authorization header when it is forwarded.
-     * */
-    bearerToken?: string;
-    /**
-     * If present, these basic auth credentials will be added to the request as
-     * an authorization header when it is forwarded.
-     */
-    basicAuth?: {
-        username: string;
-        password: string;
-    };
-}
-
-export interface CompiledForwardTarget {
-    compiled: true;
-    /** A key which uniquely identifies the "source" of the ForwardTarget. */
-    key: string;
-    /** The target endpoint to forward http traffic to. */
-    targetUrl: string;
-    /** The target endpoint to forward websocket traffic to. */
-    wsTargetUrl: string;
-    /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
-    host: string;
-    /** User must match one of the given conditions to be allowed access. */
-    conditions: Condition[];
-    /** A list of headers to add to requests sent to this target. */
-    headers?: { [header: string]: string | string[] };
 }

@@ -6,6 +6,7 @@ import { DEFAULT_METRICS_PORT, readConfig, validateConfig } from './config';
 import ForwardTargetManager from './ForwardTargetManager';
 import { startMetricsServer } from './metrics';
 import { startServer as startProxyServer } from './server/index';
+import { CompiledForwardTarget, compileForwardTarget } from './Targets';
 import * as log from './utils/logger';
 
 async function start() {
@@ -33,8 +34,16 @@ async function start() {
         kubeConfig.loadFromDefault();
     }
 
+    const k8sApi = kubeConfig ? kubeConfig.makeApiClient(k8s.CoreV1Api) : undefined;
+    const defaultTargets: CompiledForwardTarget[] = [];
+    for (const defaultTarget of config.defaultTargets) {
+        defaultTargets.push(
+            await compileForwardTarget(k8sApi, defaultTarget, config.defaultConditions)
+        );
+    }
+
     // Watch Kubernetes for services to proxy to.
-    const forwardTargets = new ForwardTargetManager(config, enabledAuthModles, {
+    const forwardTargets = new ForwardTargetManager(defaultTargets, {
         kubeConfig,
         domain: config.domain,
         namespaces: config.namespaces,

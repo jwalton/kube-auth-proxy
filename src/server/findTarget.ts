@@ -1,6 +1,6 @@
 import express from 'express';
 import { noTargetFound } from '../metrics';
-import { CompiledForwardTarget } from '../types';
+import { CompiledForwardTarget } from '../Targets';
 import * as log from '../utils/logger';
 
 export interface ForwardTargetFinder {

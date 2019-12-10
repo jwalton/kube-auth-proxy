@@ -3,12 +3,6 @@ import { AuthModule } from '../../src/authModules/AuthModule';
 import { Condition, SanitizedKubeAuthProxyConfig } from '../../src/types';
 
 export default class MockAuthModule implements AuthModule {
-    private _allowedUsers: string[];
-
-    constructor(allowedUsers: string[]) {
-        this._allowedUsers = allowedUsers;
-    }
-
     name = 'mock-auth';
 
     authenticationMiddleware(_config: SanitizedKubeAuthProxyConfig): express.RequestHandler {
@@ -31,8 +25,8 @@ export default class MockAuthModule implements AuthModule {
         return router;
     }
 
-    authorize(user: any, _condition: Condition) {
-        return this._allowedUsers.includes(user.username);
+    authorize(user: any, condition: Condition) {
+        return (condition as any).allowedUsers.includes(user.username);
     }
 
     getLoginButton() {

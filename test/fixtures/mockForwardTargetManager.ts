@@ -1,13 +1,10 @@
 import { ForwardTargetFinder } from '../../src/server/findTarget';
-import { ForwardTarget } from '../../src/types';
-import { compileForwardTarget } from '../../src/utils/utils';
+import { CompiledForwardTarget } from '../../src/Targets';
 
-export function mockForwardTargetManager(targets: ForwardTarget[]): ForwardTargetFinder {
-    const compiledForwardTargets = targets.map(t => compileForwardTarget([], t));
-
+export function mockForwardTargetManager(targets: CompiledForwardTarget[]): ForwardTargetFinder {
     return {
         findTarget(host: string) {
-            return compiledForwardTargets.find(target => target.host === host);
+            return targets.find(target => target.host === host);
         },
     };
 }
