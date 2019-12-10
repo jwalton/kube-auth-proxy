@@ -78,6 +78,9 @@ class ConfigWatcher extends EventEmitter {
                 const serviceName = service.metadata.name;
 
                 if (this._namespaces && !this._namespaces.includes(namespace)) {
+                    log.debug(
+                        `Ignoring service ${namespace}/${serviceName} because it's not in a watched namespace`
+                    );
                     return;
                 }
 
@@ -220,9 +223,15 @@ async function serviceToConfig(
                 answer.conditions = answer.conditions.concat(modConditions);
             }
         }
+    } else {
+        const namespace = service.metadata?.namespace || 'unknown';
+        const serviceName = service.metadata?.name || 'unknown';
+        log.debug(
+            `Ignoring service ${namespace}/${serviceName} because it is missing host annotation.`
+        );
     }
 
-    return undefined;
+    return answer;
 }
 
 /**
