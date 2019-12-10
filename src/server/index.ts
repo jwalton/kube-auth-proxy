@@ -18,7 +18,11 @@ export function startServer(
 ) {
     const app = express();
     app.disable('x-powered-by');
-    app.set('trust proxy', true);
+    app.enable('trust proxy');
+
+    app.get('/kube-auth-proxy/status', (_req, res) => {
+        res.send('ok');
+    });
 
     app.use(sessionMiddleware(config));
 
