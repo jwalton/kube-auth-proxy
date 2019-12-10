@@ -49,6 +49,7 @@ describe('Server Tests', function() {
             compiled: true,
             host: 'mock.test.com',
             key: 'mock',
+            source: 'mock',
             targetUrl: `http://localhost:${testPort}`,
             wsTargetUrl: `ws://localhost:${testPort}`,
             conditions: [{ allowedUsers: USER_JWALTON.username } as any],

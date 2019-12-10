@@ -34,6 +34,8 @@ export default class ForwardTargetManager implements ForwardTargetFinder {
             domain: string;
             kubeConfig?: k8s.KubeConfig;
             namespaces?: string[];
+            configMapSelector?: k8s.V1LabelSelector;
+            secretSelector?: k8s.V1LabelSelector;
         }
     ) {
         this._domain = options.domain;
@@ -43,16 +45,20 @@ export default class ForwardTargetManager implements ForwardTargetFinder {
 
             this._configWatch.on('updated', target => {
                 if (!this._targetByKey[target.key]) {
-                    log.info(`Adding target from k8s ${target.host} => ${target.targetUrl}`);
+                    log.info(
+                        `Adding target ${target.host} => ${target.targetUrl} (from ${target.source})`
+                    );
                 }
                 this._targetByKey[target.key] = target;
                 this._rebuildConfigsByHost();
             });
-            this._configWatch.on('deleted', key => {
-                if (this._targetByKey[key]) {
-                    log.info(`Removing target from k8s ${key}`);
+            this._configWatch.on('deleted', target => {
+                if (this._targetByKey[target.key]) {
+                    log.info(
+                        `Removing target ${target.host} => ${target.targetUrl} (from ${target.source})`
+                    );
+                    delete this._targetByKey[target.key];
                 }
-                delete this._targetByKey[key];
                 this._rebuildConfigsByHost();
             });
 

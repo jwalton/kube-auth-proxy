@@ -48,6 +48,7 @@ describe('Websocket Server Tests', function() {
         forwardTarget = {
             compiled: true,
             key: 'mock',
+            source: 'mock',
             targetUrl: `http://localhost:${testPort}`,
             wsTargetUrl: `ws://localhost:${testPort}`,
             /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */

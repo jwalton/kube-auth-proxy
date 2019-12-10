@@ -1,12 +1,15 @@
 import * as k8s from '@kubernetes/client-node';
 import http from 'http';
+import _ from 'lodash';
 import { URL } from 'url';
 import { K8sSecretSpecifier, readSecret } from './k8sConfig/k8sUtils';
-import { Condition } from './types';
+import { Condition, RawCondition } from './types';
+import * as log from './utils/logger';
 
-export interface RawForwardTarget {
+export interface RawForwardTarget extends RawCondition {
     /** A key which uniquely identifies the "source" of the ForwardTarget. */
     key: string;
+    source: string;
     namespace: string;
     service?: string | k8s.V1Service;
     host: string;
@@ -17,15 +20,21 @@ export interface RawForwardTarget {
     basicAuthUsername?: string;
     basicAuthPassword?: string;
     basicAuthPasswordSecret?: K8sSecretSpecifier;
-    githubAllowedOrganizations?: string[];
-    githubAllowedUsers?: string[];
-    githubAllowedTeams?: string[];
 }
 
 export interface CompiledForwardTarget {
     compiled: true;
-    /** A key which uniquely identifies the "source" of the ForwardTarget. */
+    /**
+     * A key which uniquely identifies this ForwardTarget.
+     */
     key: string;
+    /**
+     * A key which uniquely identifies the source of the ForwardTarget.
+     * Note that multiple targets may have the same source if they came from the
+     * same place (for example, many targets defined in a single
+     * configmap).
+     */
+    source: string;
     /** The target endpoint to forward http traffic to. */
     targetUrl: string;
     /** The target endpoint to forward websocket traffic to. */
@@ -90,6 +99,7 @@ export async function compileForwardTarget(
     const answer: CompiledForwardTarget = {
         compiled: true,
         key: target.key,
+        source: target.source,
         targetUrl,
         wsTargetUrl,
         host: target.host,
@@ -100,7 +110,37 @@ export async function compileForwardTarget(
     return answer;
 }
 
-function getConditions(target: RawForwardTarget, defaultConditions: Condition[]) {
+export function parseTargetsFromFile(
+    namespace: string | undefined,
+    source: string,
+    filename: string,
+    targets: RawForwardTarget[] | undefined
+) {
+    if (!targets || !Array.isArray(targets)) {
+        log.warn(`${source}/${filename}: has no targets.`);
+        return [];
+    }
+
+    const uniqueTargets = _.uniqBy(targets, target => target.host);
+    if (uniqueTargets.length !== targets.length) {
+        log.warn(
+            `${source}/${filename} has multiple targets with the same host - some will be ignored.`
+        );
+    }
+
+    uniqueTargets.forEach(target => {
+        target.namespace = namespace || target.namespace || 'default';
+        target.source = source;
+        target.key = `${source}/${filename}/${target.host}`;
+    });
+    return targets;
+}
+
+/**
+ * Given a set of raw conditions from a service or config file,
+ * generate a set of Condition objects.
+ */
+export function getConditions(target: RawCondition, defaultConditions: Condition[]) {
     const answer: Condition[] = [];
 
     const { githubAllowedOrganizations, githubAllowedTeams, githubAllowedUsers } = target;

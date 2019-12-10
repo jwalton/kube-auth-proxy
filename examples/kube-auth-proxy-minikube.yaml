@@ -45,6 +45,12 @@ stringData:
       github:
         clientID: 'CLIENT-ID-HERE'
         clientSecret: 'CLIENT-SECRET-HERE'
+    configMapSelector:
+      matchLabels:
+        type: kube-auth-proxy-config
+    secretSelector:
+      matchLabels:
+        type: kube-auth-proxy-config
 ---
 apiVersion: apps/v1
 kind: Deployment

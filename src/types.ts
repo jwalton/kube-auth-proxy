@@ -1,3 +1,4 @@
+import * as k8s from '@kubernetes/client-node';
 import { RawForwardTarget } from './Targets';
 import { LogLevel } from './utils/logger';
 
@@ -66,10 +67,13 @@ export interface RawKubeAuthProxyConfig {
         };
     };
 
-    defaultConditions?: Condition[];
+    defaultConditions?: RawCondition;
     defaultTargets?: RawForwardTarget[];
 
     logLevel?: LogLevel;
+
+    configMapSelector?: k8s.V1LabelSelector;
+    secretSelector?: k8s.V1LabelSelector;
 }
 
 export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {
@@ -80,6 +84,12 @@ export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {
     defaultConditions: Condition[];
     defaultTargets: RawForwardTarget[];
 };
+
+export interface RawCondition {
+    githubAllowedOrganizations?: string[];
+    githubAllowedUsers?: string[];
+    githubAllowedTeams?: string[];
+}
 
 export interface Condition {
     githubAllowedOrganizations?: string[];

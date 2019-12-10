@@ -69,7 +69,11 @@ export async function readSecret(k8sApi: k8s.CoreV1Api, secret: K8sSecretSpecifi
     if (!base64Data) {
         throw new Error(`Secret ${name} has no data named ${secret.dataName}`);
     }
-    return base64Data;
+    return decodeSecret(base64Data);
+}
+
+export function decodeSecret(base64Data: string) {
+    return Buffer.from(base64Data, 'base64').toString('utf-8');
 }
 
 function getSecret(k8sApi: k8s.CoreV1Api, namespace: string, secretName: string) {
@@ -96,4 +100,43 @@ async function getSecretFromRegex(k8sApi: k8s.CoreV1Api, namespace: string, secr
     throw new Error(
         `Could not find secret in namespace ${namespace} matching regex ${secretRegex}`
     );
+}
+
+/**
+ * Convert a label selector into query parameters.
+ */
+export function labelSelectorToQueryParam(labelSelector: k8s.V1LabelSelector | undefined) {
+    if (!labelSelector) {
+        return '';
+    }
+
+    const filters: string[] = [];
+    if (labelSelector.matchLabels) {
+        for (const key of Object.keys(labelSelector.matchLabels)) {
+            filters.push(`${key}=${labelSelector.matchLabels[key]}`);
+        }
+    }
+
+    if (labelSelector.matchExpressions) {
+        for (const expression of labelSelector.matchExpressions) {
+            const operator = expression.operator.toLowerCase();
+            if (operator === 'in' || operator === 'notin') {
+                filters.push(
+                    `${expression.key} ${operator} (${(expression.values || [])?.join(', ')})`
+                );
+            } else if (operator === 'exists') {
+                filters.push(expression.key);
+            } else if (operator === 'doesnotexist') {
+                filters.push(`!${expression.key}`);
+            } else {
+                throw new Error(`Unknown operator ${expression.operator}`);
+            }
+        }
+    }
+
+    const value = filters.join(',');
+    const query = new URLSearchParams();
+    query.set('labelSelector', value);
+
+    return `?${query.toString()}`;
 }

@@ -51,7 +51,7 @@ export function makeWebsocketHandler(
             authorization(req, err => {
                 if (err) {
                     log.info(
-                        `Rejecting unauthorized user ${user.username} for service ${target.key}.`
+                        `Rejecting unauthorized user ${user.username} for service ${target.host}.`
                     );
                     metrics.notAuthorizedCount.inc({ type: 'ws' });
                     socket.end(generateHttpMessage(403, 'Forbidden'));
@@ -59,7 +59,7 @@ export function makeWebsocketHandler(
                 }
 
                 log.debug(
-                    `Forwarding WS connection from user ${user.username} to service ${target.key}.`
+                    `Forwarding WS connection from user ${user.username} to service ${target.host}.`
                 );
                 metrics.forwardCount.inc({ type: 'ws' });
 

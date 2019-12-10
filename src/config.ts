@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { promises as fs } from 'fs';
 import jsYaml from 'js-yaml';
+import { getConditions } from './Targets';
 import { RawKubeAuthProxyConfig, SanitizedKubeAuthProxyConfig } from './types';
 
 export const DEFAULT_PORT = 5050;
@@ -80,9 +81,10 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
     // FIXME: Better validation for these - if someone misspells a key, we don't
     // want to allow users we shouldn't.  We should pass these to the AuthMod
     // to validate/clean up.  We should also disallow conditions with no "type".
-    if (!config.defaultConditions) {
-        config.defaultConditions = [];
-    }
+    (config as SanitizedKubeAuthProxyConfig).defaultConditions = getConditions(
+        config.defaultConditions || {},
+        []
+    );
 
     // FIXME: Validation for targets.
     config.defaultTargets = (config.defaultTargets || []).map((forward, index) => ({

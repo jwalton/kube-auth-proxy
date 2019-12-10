@@ -147,7 +147,10 @@ be able to connect.
 
   would find the secret "mysecret" in the same namespace as the service, extract
   value "token", and inject this as a bearer token in an "Authorization"
-  header for all requests forwarded to the service.
+  header for all requests forwarded to the service. You can also specify a
+  `secretRegex` in place of `secretName`, in which case the first secret found
+  which matches the regex will be used. This is handy for tokens created by a
+  ServiceAccount.
 
 - `kube-auth-proxy/basicAuthUsername` - A username to send in basic auth
   credentials to the target. If `kube-auth-proxy/basicAuthPasswordSecret` or
@@ -188,6 +191,57 @@ members of "myorg" will be allowed to access you service).
   "dev@benbria,ops@benbria". Note that this is not case sensitive.
 - `kube-auth-proxy/githubAllowedUsers` - A comma delimited list of github
   users allowed to access this service. Note that this is not case sensitive.
+
+## Configuring Services with Configmaps and Secrets
+
+Adding annotations to services is the preferred way to configure kube-auth-proxy,
+but sometimes it is impractical - for example perhaps you have a service
+you've installed via helm, and the helm chart doesn't give you an easy way to
+add annotations to the service.
+
+In these cases, you can configure services using configmaps or secrets. In your
+kube-auth-proxy config file, add the following top-level items:
+
+```yaml
+configMapSelector:
+  matchLabels:
+    type: kube-auth-proxy-config
+secretSelector:
+  matchLabels:
+    type: kube-auth-proxy-config
+```
+
+This make it so kube-auth-proxy will actively watch secrets and configmaps with
+the label "kube-auth-proxy-config". It will load all data inside any such
+configmap or secret found, and try to parse it as a YAML config file. Here's
+an example config file for the kubernetes dashboard:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kube-auth-proxy-kubernetes-dashboard
+  labels:
+    type: kube-auth-proxy-config
+type: Opaque
+stringData:
+  services.yaml: |
+    targets:
+      - host: dashboard
+        service: kubernetes-dashboard
+        targetPort: 443
+        bearerTokenSecret:
+          - secretRegex: '^kubernetes-dashboard-token.*$'
+          - dataName: 'token'
+        githubAllowedTeams: devOps@MY-ORG-HERE
+```
+
+Inside a `target`, you can use any annotation you could use on a service
+(minus the "kube-auth-proxy/" prefix). In addition, you can specify the following:
+
+- `service` - The name of the service to forward traffic to.
+- `targetUrl` - As an alternative to `service`, you can specify a target URL directly.
+- `namespace` - The namespace the service (and
 
 ## Run locally in minikube
 

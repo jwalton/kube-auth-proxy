@@ -60,7 +60,17 @@ stringData:
         clientSecret: 'CLIENT-SECRET-HERE'
 
     defaultConditions:
-      - githubAllowedOrganizations: 'MY-ORG-HERE'
+      githubAllowedOrganizations: 'MY-ORG-HERE'
+
+    # Read services config from configmaps with the given labels.
+    configMapSelector:
+      matchLabels:
+        type: kube-auth-proxy-config
+
+    # Read services config from secrets with the given labels.
+    secretSelector:
+      matchLabels:
+        type: kube-auth-proxy-config
 
 ---
 apiVersion: apps/v1
