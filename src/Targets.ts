@@ -80,13 +80,13 @@ export async function compileForwardTarget(
 
     const headers: { [header: string]: string | string[] } = {};
 
-    const bearerToken = readSecretOrString(k8sApi, target.bearerTokenSecret, undefined);
+    const bearerToken = await readSecretOrString(k8sApi, target.bearerTokenSecret, undefined);
     if (bearerToken) {
         addHeader(headers, 'authorization', `Bearer ${bearerToken}`);
     }
 
     const username = target.basicAuthUsername;
-    const password = readSecretOrString(
+    const password = await readSecretOrString(
         k8sApi,
         target.basicAuthPasswordSecret,
         target.basicAuthPassword
