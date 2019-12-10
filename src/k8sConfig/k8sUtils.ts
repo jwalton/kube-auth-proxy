@@ -18,7 +18,7 @@ export type K8sSecretSpecifier =
  * @param spec - the specifier to parse.
  * @param source - the location where this specifier was read from (used in error messages).
  */
-export function parseSecretSpecifier(spec: string, source: string) {
+export function parseSecretSpecifier(defaultNamespace: string, spec: string, source: string) {
     let secretSpec: any;
     try {
         secretSpec = JSON.parse(spec);
@@ -27,7 +27,7 @@ export function parseSecretSpecifier(spec: string, source: string) {
     }
 
     if (!secretSpec.namespace) {
-        throw new Error(`Missing namespace in ${source}`);
+        secretSpec.namespace = defaultNamespace;
     }
 
     if (!secretSpec.secretName && !secretSpec.secretRegex) {

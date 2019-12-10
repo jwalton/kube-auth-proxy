@@ -287,11 +287,11 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTar
             key: source,
             source: source,
             host: annotations[annotationNames.HOST],
-            namespace: namespace,
             service,
             targetPort: annotations[annotationNames.TARGET_PORT],
             bearerTokenSecret: bearerTokenSecret
                 ? parseSecretSpecifier(
+                      namespace,
                       bearerTokenSecret,
                       `service ${namespace}/${service.metadata.name}/annotations/${annotationNames.BEARER_TOKEN_SECRET}`
                   )
@@ -300,6 +300,7 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTar
             basicAuthPassword: annotations[annotationNames.BASIC_AUTH_PASSWORD],
             basicAuthPasswordSecret: basicAuthPasswordSecret
                 ? parseSecretSpecifier(
+                      namespace,
                       basicAuthPasswordSecret,
                       `service ${namespace}/${service.metadata.name}/annotations/${annotationNames.BASIC_AUTH_PASSWORD_SECRET}`
                   )

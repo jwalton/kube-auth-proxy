@@ -1,25 +1,36 @@
 import * as k8s from '@kubernetes/client-node';
-import http from 'http';
 import _ from 'lodash';
 import { URL } from 'url';
 import { K8sSecretSpecifier, readSecret } from './k8sConfig/k8sUtils';
 import { Condition, RawCondition } from './types';
 import * as log from './utils/logger';
 
-export interface RawForwardTarget extends RawCondition {
-    /** A key which uniquely identifies the "source" of the ForwardTarget. */
-    key: string;
-    source: string;
-    namespace: string;
-    service?: string | k8s.V1Service;
-    host: string;
-    targetPort?: string | number;
-    targetUrl?: string;
-    wsTargetUrl?: string;
-    bearerTokenSecret?: K8sSecretSpecifier;
-    basicAuthUsername?: string;
-    basicAuthPassword?: string;
-    basicAuthPasswordSecret?: K8sSecretSpecifier;
+export type ServiceSpecifier =
+    | {
+          namespace?: string;
+          service: string;
+      }
+    | { service: k8s.V1Service }
+    | {
+          targetUrl: string;
+      };
+
+export type RawForwardTarget = RawCondition &
+    ServiceSpecifier & {
+        /** A key which uniquely identifies the "source" of the ForwardTarget. */
+        key: string;
+        source: string;
+        host: string;
+        targetPort?: string | number;
+        wsTargetUrl?: string;
+        bearerTokenSecret?: K8sSecretSpecifier;
+        basicAuthUsername?: string;
+        basicAuthPassword?: string;
+        basicAuthPasswordSecret?: K8sSecretSpecifier;
+    };
+
+export interface Headers {
+    [header: string]: string | string[];
 }
 
 export interface CompiledForwardTarget {
@@ -44,7 +55,16 @@ export interface CompiledForwardTarget {
     /** User must match one of the given conditions to be allowed access. */
     conditions: Condition[];
     /** A list of headers to add to requests sent to this target. */
-    headers?: { [header: string]: string | string[] };
+    headers?: Headers;
+}
+
+function isSerivceNameAndNamespace(
+    target: ServiceSpecifier
+): target is {
+    namespace?: string;
+    service: string;
+} {
+    return 'service' in target && typeof target.service === 'string';
 }
 
 export async function compileForwardTarget(
@@ -54,18 +74,20 @@ export async function compileForwardTarget(
 ): Promise<CompiledForwardTarget> {
     let targetUrl: string;
 
-    if (typeof target.targetUrl === 'string') {
+    if ('targetUrl' in target && typeof target.targetUrl === 'string') {
         targetUrl = target.targetUrl;
-    } else if (typeof target.service === 'string') {
+    } else if (isSerivceNameAndNamespace(target)) {
         if (!k8sApi) {
             throw new Error(`Can't load service ${target.service} without kubernetes.`);
         }
-        const service = await k8sApi.readNamespacedService(target.service, target.namespace);
+        const namespace = target.namespace || 'default';
+
+        const service = await k8sApi.readNamespacedService(target.service, namespace);
         if (!service || !service.body) {
-            throw new Error(`Can't find service ${target.namespace}/${target.service}`);
+            throw new Error(`Can't find service ${namespace}/${target.service}`);
         }
         targetUrl = getTargetUrlFromService(service.body, target.targetPort);
-    } else if (target.service) {
+    } else if ('service' in target && typeof target.service !== 'string') {
         targetUrl = getTargetUrlFromService(target.service, target.targetPort);
     } else {
         throw new Error(`Need one of target.targetUrl or target.service`);
@@ -78,11 +100,11 @@ export async function compileForwardTarget(
         wsTargetUrl = url.toString();
     }
 
-    const headers: { [header: string]: string | string[] } = {};
+    let headers: Headers | undefined;
 
     const bearerToken = await readSecretOrString(k8sApi, target.bearerTokenSecret, undefined);
     if (bearerToken) {
-        addHeader(headers, 'authorization', `Bearer ${bearerToken}`);
+        headers = addHeader(headers, 'authorization', `Bearer ${bearerToken}`);
     }
 
     const username = target.basicAuthUsername;
@@ -93,7 +115,7 @@ export async function compileForwardTarget(
     );
     if (username && password) {
         const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
-        addHeader(headers, 'authorization', `Basic ${basicAuth}`);
+        headers = addHeader(headers, 'authorization', `Basic ${basicAuth}`);
     }
 
     const answer: CompiledForwardTarget = {
@@ -129,7 +151,9 @@ export function parseTargetsFromFile(
     }
 
     uniqueTargets.forEach(target => {
-        target.namespace = namespace || target.namespace || 'default';
+        if (isSerivceNameAndNamespace(target)) {
+            target.namespace = namespace || target.namespace;
+        }
         target.source = source;
         target.key = `${source}/${filename}/${target.host}`;
     });
@@ -221,15 +245,17 @@ async function readSecretOrString(
     }
 }
 
-function addHeader(headers: http.OutgoingHttpHeaders, header: string, value: string) {
-    const existing = headers[header];
+function addHeader(headers: Headers | undefined, header: string, value: string) {
+    const newHeaders = headers || {};
+    const existing = newHeaders[header];
     if (!existing) {
-        headers[header] = value;
+        newHeaders[header] = value;
     } else if (typeof existing === 'string') {
-        headers[header] = [existing, value];
+        newHeaders[header] = [existing, value];
     } else if (Array.isArray(existing)) {
         existing.push(value);
     } else {
         throw new Error(`Can't add header ${header} to request headers with value ${existing}`);
     }
+    return newHeaders;
 }
