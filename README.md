@@ -241,7 +241,8 @@ target:
     secretRegex: '^kubernetes-dashboard-token.*$'
     dataName: 'token'
   conditions:
-    githubAllowedTeams: devOps@MY-ORG-HERE
+    githubAllowedTeams:
+      - devOps@MY-ORG-HERE
 ```
 
 Inside a `target`, you can use (almost) any annotation you could use on a service
