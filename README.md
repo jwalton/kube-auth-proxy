@@ -164,9 +164,9 @@ be able to connect.
   credentials to the target. In general you should prefer
   `kube-auth-proxy/basicAuthPasswordSecret` over this.
 
-### Restrictions
+### Conditions
 
-Note that if more than one restriction is defined, they are "or"ed together.
+Note that if more than one condition is defined, they are "or"ed together.
 In other words, if you specify:
 
 ```yaml
@@ -233,15 +233,18 @@ stringData:
         bearerTokenSecret:
           - secretRegex: '^kubernetes-dashboard-token.*$'
           - dataName: 'token'
-        githubAllowedTeams: devOps@MY-ORG-HERE
+        conditions:
+          githubAllowedTeams: devOps@MY-ORG-HERE
 ```
 
 Inside a `target`, you can use any annotation you could use on a service
-(minus the "kube-auth-proxy/" prefix). In addition, you can specify the following:
+(minus the "kube-auth-proxy/" prefix). Condition annotations must be in the
+"conditions" section. In addition, you can specify the following:
 
-- `service` - The name of the service to forward traffic to.
 - `targetUrl` - As an alternative to `service`, you can specify a target URL directly.
-- `namespace` - The namespace the service (and
+- `service` - The name of the service to forward traffic to. Ignored if
+  `targetUrl` is set.
+- `namespace` - The namespace of the target service. Ignored if `targetUrl` is set.
 
 ## Run locally in minikube
 

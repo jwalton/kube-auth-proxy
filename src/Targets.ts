@@ -15,19 +15,18 @@ export type ServiceSpecifier =
           targetUrl: string;
       };
 
-export type RawForwardTarget = RawCondition &
-    ServiceSpecifier & {
-        /** A key which uniquely identifies the "source" of the ForwardTarget. */
-        key: string;
-        source: string;
-        host: string;
-        targetPort?: string | number;
-        wsTargetUrl?: string;
-        bearerTokenSecret?: K8sSecretSpecifier;
-        basicAuthUsername?: string;
-        basicAuthPassword?: string;
-        basicAuthPasswordSecret?: K8sSecretSpecifier;
-    };
+export type RawForwardTarget = ServiceSpecifier & {
+    /** A key which uniquely identifies the "source" of the ForwardTarget. */
+    key: string;
+    source: string;
+    host: string;
+    targetPort?: string | number;
+    bearerTokenSecret?: K8sSecretSpecifier;
+    basicAuthUsername?: string;
+    basicAuthPassword?: string;
+    basicAuthPasswordSecret?: K8sSecretSpecifier;
+    conditions?: RawCondition;
+};
 
 export interface Headers {
     [header: string]: string | string[];
@@ -50,7 +49,10 @@ export interface CompiledForwardTarget {
     targetUrl: string;
     /** The target endpoint to forward websocket traffic to. */
     wsTargetUrl: string;
-    /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
+    /**
+     * kube-auth-proxy will forward traffic to this endpoint if the "host"
+     * header in the request is `${host}.${domain}` or is this string.
+     */
     host: string;
     /** User must match one of the given conditions to be allowed access. */
     conditions: Condition[];
@@ -93,12 +95,9 @@ export async function compileForwardTarget(
         throw new Error(`Need one of target.targetUrl or target.service`);
     }
 
-    let wsTargetUrl = target.wsTargetUrl;
-    if (!wsTargetUrl) {
-        const url = new URL(targetUrl);
-        url.protocol = url.protocol === 'https' ? 'wss' : 'ws';
-        wsTargetUrl = url.toString();
-    }
+    const url = new URL(targetUrl);
+    url.protocol = url.protocol === 'https' ? 'wss' : 'ws';
+    const wsTargetUrl = url.toString();
 
     let headers: Headers | undefined;
 
@@ -125,7 +124,7 @@ export async function compileForwardTarget(
         targetUrl,
         wsTargetUrl,
         host: target.host,
-        conditions: getConditions(target, defaultConditions),
+        conditions: getConditions(target.conditions, defaultConditions),
         headers,
     };
 
@@ -164,10 +163,29 @@ export function parseTargetsFromFile(
  * Given a set of raw conditions from a service or config file,
  * generate a set of Condition objects.
  */
-export function getConditions(target: RawCondition, defaultConditions: Condition[]) {
+export function getConditions(target: RawCondition | undefined, defaultConditions: Condition[]) {
     const answer: Condition[] = [];
 
-    const { githubAllowedOrganizations, githubAllowedTeams, githubAllowedUsers } = target;
+    const {
+        allowedEmails,
+        emailDomains,
+        githubAllowedOrganizations,
+        githubAllowedTeams,
+        githubAllowedUsers,
+    } = target || {};
+
+    if (allowedEmails) {
+        answer.push({ allowedEmails });
+    }
+
+    if (emailDomains) {
+        answer.push({
+            emailDomains: emailDomains.map(domain =>
+                domain.startsWith('@') ? domain : `@${domain}`
+            ),
+        });
+    }
+
     if (githubAllowedOrganizations) {
         answer.push({ githubAllowedOrganizations });
     }

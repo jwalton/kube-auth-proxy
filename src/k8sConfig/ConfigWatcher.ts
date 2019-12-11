@@ -9,7 +9,7 @@ import {
     parseTargetsFromFile,
     RawForwardTarget,
 } from '../Targets';
-import { Condition } from '../types';
+import { Condition, RawCondition } from '../types';
 import * as log from '../utils/logger';
 import { parseCommaDelimitedList } from '../utils/utils';
 import * as annotationNames from './annotationNames';
@@ -277,12 +277,46 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTar
     const annotations = service.metadata?.annotations ?? {};
 
     if (annotations[annotationNames.HOST] && service.metadata?.name && service.spec?.ports) {
+        let conditions: RawCondition | undefined;
+
+        const allowedEmails = annotations[annotationNames.ALLOWED_EMAILS];
+        if (allowedEmails) {
+            conditions = conditions || {};
+            conditions.allowedEmails = parseCommaDelimitedList(allowedEmails);
+        }
+
+        const emailDomains = annotations[annotationNames.EMAIL_DOMAINS];
+        if (emailDomains) {
+            conditions = conditions || {};
+            conditions.emailDomains = parseCommaDelimitedList(emailDomains);
+        }
+
         const githubAllowedOrgs = annotations[annotationNames.GITHUB_ALLOWED_ORGS];
+        if (githubAllowedOrgs) {
+            conditions = conditions || {};
+            conditions.githubAllowedOrganizations = parseCommaDelimitedList(
+                githubAllowedOrgs
+            ).map(str => str.toLowerCase());
+        }
+
         const githubAllowedTeams = annotations[annotationNames.GITHUB_ALLOWED_TEAMS];
-        const githubeAllowedUsers = annotations[annotationNames.GITHUB_ALLOWED_USERS];
+        if (githubAllowedTeams) {
+            conditions = conditions || {};
+            conditions.githubAllowedTeams = parseCommaDelimitedList(githubAllowedTeams).map(str =>
+                str.toLowerCase()
+            );
+        }
+
+        const githubAllowedUsers = annotations[annotationNames.GITHUB_ALLOWED_USERS];
+        if (githubAllowedUsers) {
+            conditions = conditions || {};
+            conditions.githubAllowedUsers = parseCommaDelimitedList(githubAllowedUsers).map(str =>
+                str.toLowerCase()
+            );
+        }
+
         const bearerTokenSecret = annotations[annotationNames.BEARER_TOKEN_SECRET];
         const basicAuthPasswordSecret = annotations[annotationNames.BASIC_AUTH_PASSWORD_SECRET];
-
         answer.push({
             key: source,
             source: source,
@@ -305,15 +339,7 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTar
                       `service ${namespace}/${service.metadata.name}/annotations/${annotationNames.BASIC_AUTH_PASSWORD_SECRET}`
                   )
                 : undefined,
-            githubAllowedOrganizations: githubAllowedOrgs
-                ? parseCommaDelimitedList(githubAllowedOrgs).map(str => str.toLowerCase())
-                : undefined,
-            githubAllowedUsers: githubeAllowedUsers
-                ? parseCommaDelimitedList(githubeAllowedUsers).map(str => str.toLowerCase())
-                : undefined,
-            githubAllowedTeams: githubAllowedTeams
-                ? parseCommaDelimitedList(githubAllowedTeams).map(str => str.toLowerCase())
-                : undefined,
+            conditions,
         });
     } else {
         const serviceName = service.metadata?.name || 'unknown';

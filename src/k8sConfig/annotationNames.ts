@@ -7,3 +7,5 @@ export const BASIC_AUTH_PASSWORD_SECRET = 'kube-auth-proxy/basicAuthPasswordSecr
 export const GITHUB_ALLOWED_ORGS = 'kube-auth-proxy/githubAllowedOrganizations';
 export const GITHUB_ALLOWED_TEAMS = 'kube-auth-proxy/githubAllowedTeams';
 export const GITHUB_ALLOWED_USERS = 'kube-auth-proxy/githubAllowedUsers';
+export const ALLOWED_EMAILS = 'kube-auth-proxy/allowedEmails';
+export const EMAIL_DOMAINS = 'kube-auth-proxy/emailDomains';

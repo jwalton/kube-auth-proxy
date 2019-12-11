@@ -62,7 +62,9 @@ describe('targets', function() {
                     source: 'test',
                     host: 'prometheus',
                     targetUrl: 'http://theservice.default:80',
-                    githubAllowedOrganizations: ['exegesis-js'],
+                    conditions: {
+                        githubAllowedOrganizations: ['exegesis-js'],
+                    },
                 },
                 [
                     {

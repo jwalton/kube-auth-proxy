@@ -86,12 +86,16 @@ export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {
 };
 
 export interface RawCondition {
+    allowedEmails?: string[];
+    emailDomains?: string[];
     githubAllowedOrganizations?: string[];
     githubAllowedUsers?: string[];
     githubAllowedTeams?: string[];
 }
 
 export interface Condition {
+    allowedEmails?: string[];
+    emailDomains?: string[];
     githubAllowedOrganizations?: string[];
     githubAllowedTeams?: string[];
     githubAllowedUsers?: string[];

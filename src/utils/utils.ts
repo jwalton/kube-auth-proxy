@@ -8,6 +8,10 @@ export function parseCommaDelimitedList(value: string): string[] {
         .filter(val => !!val);
 }
 
+export function intersectionNotEmpty(a: string[], b: string[]) {
+    return a.some(aValue => b.includes(aValue));
+}
+
 export function generateHttpMessage(
     statusCode: number,
     reason: string,

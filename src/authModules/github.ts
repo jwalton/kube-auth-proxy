@@ -5,6 +5,7 @@ import GitHubStrategy from 'passport-github';
 import '../server/express-types';
 import { Condition, KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
+import { intersectionNotEmpty } from '../utils/utils';
 
 // Refresh the user's teams and orgs every 5 minutes.
 const USER_REFRESH_INTERVAL = 1000 * 60 * 5;
@@ -129,10 +130,6 @@ export function authenticationMiddleware(
     );
 
     return router;
-}
-
-function intersectionNotEmpty(a: string[], b: string[]) {
-    return a.some(aValue => b.includes(aValue));
 }
 
 /**

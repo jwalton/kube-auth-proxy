@@ -2,6 +2,8 @@ import http from 'http';
 import { AuthModule } from '../authModules/AuthModule';
 import { notAuthorizedCount } from '../metrics';
 import { CompiledForwardTarget } from '../Targets';
+import { Condition, KubeAuthProxyUser } from '../types';
+import { intersectionNotEmpty } from '../utils/utils';
 
 export function authorizationMiddleware(authModules: AuthModule[]) {
     const mw = wsAuthorizationMiddleware(authModules);
@@ -24,14 +26,15 @@ export function wsAuthorizationMiddleware(authModules: AuthModule[]) {
         if (target.conditions.length === 0) {
             authorized = true;
         } else {
-            authorized = target.conditions.some(condition =>
-                authModules.every(module => {
-                    let rejected = false;
-                    if (module.authorize) {
-                        rejected = !module.authorize(user, condition, target, req);
-                    }
-                    return !rejected;
-                })
+            authorized = target.conditions.some(
+                condition =>
+                    authModules.every(module => {
+                        let rejected = false;
+                        if (module.authorize) {
+                            rejected = !module.authorize(user, condition, target, req);
+                        }
+                        return !rejected;
+                    }) && authorizeEmails(user, condition)
             );
         }
 
@@ -49,4 +52,15 @@ export function wsAuthorizationMiddleware(authModules: AuthModule[]) {
             next();
         }
     };
+}
+
+function authorizeEmails(user: KubeAuthProxyUser, condition: Condition) {
+    const matchAllowedEmails =
+        !condition.allowedEmails || intersectionNotEmpty(condition.allowedEmails, user.emails);
+
+    const matchEmailDomains =
+        !condition.emailDomains ||
+        user.emails.some(email => condition.emailDomains?.some(domain => email.endsWith(domain)));
+
+    return matchAllowedEmails && matchEmailDomains;
 }
