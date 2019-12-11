@@ -19,18 +19,34 @@ a replacement for oauth2_proxy.
 You may have a number of "internal" services, such as Prometheus, Grafana,
 Kibana, the Kubernetes dashboard, or others, which you'd like to make available
 on the public internet, but which you'd like to control who can access.
-kube-auth-proxy tries to make this a fairly painless process.
+kube-auth-proxy makes this quite painless.
 
 The basic idea is:
 
-- Install kube-auth-proxy. Configure it with some default authentication and
-  authorization.
+- Install kube-auth-proxy. Configure it with an authentication provider and
+  some default authorization rules.
 - Set up an ingress controller which forwards one or more subdomains to kube-auth-proxy
   (e.g. "\*.internal.mydomain.com").
 - For each service you want to expose, either add some annotations to that service
-  or create a configmap for the service which desicribes what domain it should
-  be available on (e.g. "prometheus.internal.mydomain.com" or just "prometheus"),
+  or create a ProxyTarget custom resource for the service which desicribes what
+  domain it should be available on (e.g. "prometheus.internal.mydomain.com"),
   and optionally specify some extra authorization criteria for this service.
+
+## Motivation
+
+You can do all of this with [oauth2_proxy](https://github.com/bitly/oauth2_proxy),
+but the setup is quite complicated, and most of the tutorials involved assume you
+are using nginx for your ingress and rely on some features built into nginx to
+manage authentication. If you're using traefik or an AWS ALB ingress, none of
+these will work for you (unless you do something like set up an ALB ingress that
+forwards traffic to a nginx ingress).
+
+You can do all of this with [Pomerium](https://www.pomerium.io/), but unless you
+wrote some sort of Kubernetes Operator for Pomerium, you'd have to manage a
+bunch of configuration files and tell Pomerium where to find things.
+
+kube-auth-proxy was built from the ground up to specifically target Kubernetes.
+It's much easier to set up and use.
 
 ## Tutorial
 
