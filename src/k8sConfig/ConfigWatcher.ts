@@ -64,9 +64,9 @@ class ConfigWatcher extends EventEmitter {
 
     constructor(
         kubeConfig: k8s.KubeConfig,
+        defaultConditions: Condition[],
         options: {
             namespaces?: string[];
-            defaultConditions?: Condition[];
             proxyTargetSelector?: k8s.V1LabelSelector;
         } = {}
     ) {
@@ -78,7 +78,7 @@ class ConfigWatcher extends EventEmitter {
         this._serviceWatcher = this._watchObjects({
             kubeConfig,
             k8sApi,
-            defaultConditions: options.defaultConditions || [],
+            defaultConditions,
             type: 'service',
             resourceUrl: '/api/v1/services',
             getRawTargets: serviceToTargets,
@@ -87,7 +87,7 @@ class ConfigWatcher extends EventEmitter {
         this._proxyTargetWatcher = this._watchObjects({
             kubeConfig,
             k8sApi,
-            defaultConditions: options.defaultConditions || [],
+            defaultConditions,
             type: 'proxyTarget',
             resourceUrl: '/apis/kube-auth-proxy.thedreaming.org/v1beta1/proxytargets',
             labelSelector: options.proxyTargetSelector,

@@ -2,10 +2,10 @@ import * as k8s from '@kubernetes/client-node';
 import prometheus from 'prom-client';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
 import { ProxyTargetFinder } from './server/findTarget';
-import { CompiledProxyTarget, getFqdnForTarget } from './targets';
+import { CompiledProxyTarget, getFqdnForTarget, conditionToString } from './targets';
 import * as log from './utils/logger';
 import _ from 'lodash';
-import { KubeAuthProxyUser } from './types';
+import { KubeAuthProxyUser, Condition } from './types';
 import { authorizeUserForTarget } from './targets/authorization';
 import { AuthModule } from './authModules/AuthModule';
 
@@ -35,6 +35,7 @@ export default class TargetManager implements ProxyTargetFinder {
 
     constructor(
         defaultTargets: CompiledProxyTarget[],
+        defaultConditions: Condition[],
         authModules: AuthModule[],
         options: {
             domain: string;
@@ -47,7 +48,7 @@ export default class TargetManager implements ProxyTargetFinder {
         this._authModules = authModules;
 
         if (options.kubeConfig) {
-            this._configWatch = new ConfigWatcher(options.kubeConfig, options);
+            this._configWatch = new ConfigWatcher(options.kubeConfig, defaultConditions, options);
 
             this._configWatch.on('updated', target => {
                 const unchanged =
@@ -57,7 +58,8 @@ export default class TargetManager implements ProxyTargetFinder {
                 if (!unchanged) {
                     const verb = this._targetByKey[target.key] ? 'Updating' : 'Adding';
                     log.info(
-                        `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})`
+                        `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})\n` +
+                            target.conditions.map(c => `  ${conditionToString(c)}\n`)
                     );
                     this._targetByKey[target.key] = target;
                     this._rebuildConfigsByHost();

@@ -52,14 +52,19 @@ export function startServer(
     app.use(proxy());
 
     app.use(
-        (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+        (err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
             if ((err as any).status) {
                 res.statusCode = (err as any).status;
                 res.end(err.message);
             } else {
                 backendErrorCount.inc({ type: 'http' });
                 if ((err as any).code !== 'ECONNREFUSED') {
-                    log.error(err, 'Error forwarding connection');
+                    log.error(
+                        err,
+                        `Error forwarding connection to ${req.headers.host}${req.url}: ${
+                            (err as any).code
+                        }`
+                    );
                     res.statusCode = 502;
                     res.end('Bad Gateway');
                 } else {

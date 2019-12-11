@@ -9,6 +9,7 @@ export function targetList(props: {
 }) {
     const { user, domain } = props;
     const targets = _.sortBy(props.targets, target => target.host);
+    const haveGlobalTargets = targets.some(t => t.conditions.length === 0);
 
     return `
 <html>
@@ -66,6 +67,12 @@ export function targetList(props: {
             <ul>
                 ${targets.map(target => renderTarget(domain, target)).join('\n')}
             </ul>
+
+            ${
+                haveGlobalTargets
+                    ? `<p>* Warning: These targets have no authorization conditions, and can be accessed by anyone.</p>`
+                    : ''
+            }
         </div>
 
         <div style="text-align: center; width: 100%">
@@ -79,5 +86,7 @@ export function targetList(props: {
 function renderTarget(domain: string, target: CompiledProxyTarget) {
     const host = getFqdnForTarget(domain, target);
     const url = `https://${host}`;
-    return `<li><a href="${url}">${target.host}</a></li>`;
+    const anyUser = target.conditions.length === 0 ? ' *' : '';
+
+    return `<li><a href="${url}">${target.host}</a>${anyUser}</li>`;
 }

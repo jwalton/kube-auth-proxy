@@ -49,7 +49,7 @@ async function start() {
     }
 
     // Watch Kubernetes for services to proxy to.
-    const proxyTargets = new TargetManager(defaultTargets, authModules, {
+    const proxyTargets = new TargetManager(defaultTargets, config.defaultConditions, authModules, {
         kubeConfig,
         domain: config.domain,
         namespaces: config.namespaces,

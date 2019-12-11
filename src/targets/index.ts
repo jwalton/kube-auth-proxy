@@ -316,3 +316,10 @@ export function getFqdnForTarget(domain: string, target: CompiledProxyTarget) {
         ? target.host
         : `${target.host}.${domain}`;
 }
+
+/**
+ * Converts a condition into a single line string.
+ */
+export function conditionToString(condition: Condition) {
+    return `condition: ${JSON.stringify(condition)}`;
+}
