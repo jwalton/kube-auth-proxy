@@ -54,6 +54,7 @@ describe('Websocket Server Tests', function() {
             /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
             host: 'mock.test.com',
             conditions: [{ allowedUsers: [USER_JWALTON.username] } as any],
+            validateCertificate: true,
         };
 
         wss.on('connection', connection => {

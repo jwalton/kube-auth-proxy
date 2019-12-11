@@ -5,7 +5,7 @@ import prometheus from 'prom-client';
 import {
     CompiledProxyTarget,
     compileProxyTarget,
-    isServiceNameAndNamespace,
+    isServiceNameTargetSpecifier,
     RawProxyTarget,
 } from '../targets';
 import { Condition, RawCondition } from '../types';
@@ -97,7 +97,7 @@ class ConfigWatcher extends EventEmitter {
             resourceUrl: '/apis/kube-auth-proxy.thedreaming.org/v1beta1/proxytargets',
             labelSelector: options.proxyTargetSelector,
             getRawTargets(proxyTarget, source) {
-                if (isServiceNameAndNamespace(proxyTarget.target.to)) {
+                if (isServiceNameTargetSpecifier(proxyTarget.target.to)) {
                     proxyTarget.target.to.namespace =
                         proxyTarget.target.to.namespace || proxyTarget.metadata?.namespace;
                 }
@@ -336,6 +336,9 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
 
         const bearerTokenSecret = annotations[annotationNames.BEARER_TOKEN_SECRET];
         const basicAuthPasswordSecret = annotations[annotationNames.BASIC_AUTH_PASSWORD_SECRET];
+        const protocol = annotations[annotationNames.PROTOCOL] === 'https' ? 'https' : 'http';
+        const validateCertificate = annotations[annotationNames.VALIDATE_CERTIFICATE];
+
         answer.push({
             key: source,
             source: source,
@@ -343,6 +346,11 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
             to: {
                 service,
                 targetPort: annotations[annotationNames.TARGET_PORT],
+                protocol,
+                validateCertificate:
+                    validateCertificate === 'false' || (validateCertificate as any) === false
+                        ? false
+                        : true,
             },
             bearerTokenSecret: bearerTokenSecret
                 ? parseSecretSpecifier(

@@ -54,6 +54,10 @@ spec:
                       oneOf:
                         - type: string
                         - type: integer
+                    protocol:
+                      type: string
+                    validateCertificate:
+                      type: boolean
               type: object
               properties:
                 targetUrl:
@@ -66,6 +70,13 @@ spec:
                     - type: integer
                 namespace:
                   type: string
+                protocol:
+                  type: string
+                  enum:
+                    - http
+                    - https
+                validateCertificate:
+                  type: boolean
             bearerTokenSecret:
               type: object
               required:

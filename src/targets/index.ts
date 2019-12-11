@@ -5,15 +5,21 @@ import { K8sSecretSpecifier, readSecret } from '../k8sConfig/k8sUtils';
 import { Condition, RawCondition } from '../types';
 import * as log from '../utils/logger';
 
+interface ServiceNameTargetSpecifier {
+    namespace?: string;
+    service: string;
+    targetPort: string | number;
+    protocol?: 'http' | 'https';
+    validateCertificate?: boolean;
+}
+
 export type TargetSpecifier =
-    | {
-          namespace?: string;
-          service: string;
-          targetPort: string | number;
-      }
+    | ServiceNameTargetSpecifier
     | {
           service: k8s.V1Service;
           targetPort: string | number;
+          protocol?: 'http' | 'https';
+          validateCertificate?: boolean;
       }
     | {
           targetUrl: string;
@@ -60,17 +66,14 @@ export interface CompiledProxyTarget {
     host: string;
     /** User must match one of the given conditions to be allowed access. */
     conditions: Condition[];
+    validateCertificate: boolean;
     /** A list of headers to add to requests sent to this target. */
     headers?: Headers;
 }
 
-export function isServiceNameAndNamespace(
+export function isServiceNameTargetSpecifier(
     target: TargetSpecifier
-): target is {
-    namespace?: string;
-    service: string;
-    targetPort: string;
-} {
+): target is ServiceNameTargetSpecifier {
     return 'service' in target && typeof target.service === 'string';
 }
 
@@ -85,10 +88,11 @@ export async function compileProxyTarget(
     let targetUrl: string;
     const { to } = target;
     let defaultNamespace = options.defaultNamespace;
+    let validateCertificate = true;
 
     if ('targetUrl' in to && typeof to.targetUrl === 'string') {
         targetUrl = to.targetUrl;
-    } else if (isServiceNameAndNamespace(to)) {
+    } else if (isServiceNameTargetSpecifier(to)) {
         if (!k8sApi) {
             throw new Error(`Can't load service ${to.service} without kubernetes.`);
         }
@@ -98,13 +102,17 @@ export async function compileProxyTarget(
         if (!service || !service.body) {
             throw new Error(`Can't find service ${namespace}/${to.service}`);
         }
-        targetUrl = getTargetUrlFromService(service.body, to.targetPort);
+        targetUrl = getTargetUrlFromService(service.body, to.targetPort, to.protocol ?? 'http');
         defaultNamespace = defaultNamespace || namespace;
+        validateCertificate = to.validateCertificate ?? true;
     } else if ('service' in to && typeof to.service !== 'string') {
-        targetUrl = getTargetUrlFromService(to.service, to.targetPort);
+        targetUrl = getTargetUrlFromService(to.service, to.targetPort, to.protocol ?? 'http');
         defaultNamespace = defaultNamespace || to.service.metadata?.namespace;
+        validateCertificate = to.validateCertificate ?? true;
     } else {
-        throw new Error(`Need one of target.targetUrl or target.service`);
+        throw new Error(
+            `Need one of target.to.targetUrl or target.to.service in ${JSON.stringify(target)}`
+        );
     }
 
     const url = new URL(targetUrl);
@@ -140,6 +148,7 @@ export async function compileProxyTarget(
         wsTargetUrl,
         host: target.host,
         conditions: getConditions(target.conditions, defaultConditions),
+        validateCertificate,
         headers,
     };
 
@@ -165,7 +174,7 @@ export function parseTargetsFromFile(
     }
 
     uniqueTargets.forEach(target => {
-        if (isServiceNameAndNamespace(target.to)) {
+        if (isServiceNameTargetSpecifier(target.to)) {
             target.to.namespace = target.to.namespace || namespace;
         }
         target.source = source;
@@ -255,10 +264,16 @@ function getTargetPortNumber(service: k8s.V1Service, targetPortName: string | nu
     return answer;
 }
 
-function getTargetUrlFromService(service: k8s.V1Service, targetPort: string | number | undefined) {
-    const targetPortNumber = getTargetPortNumber(service, targetPort);
-    return `http://${service.metadata?.name}.${service.metadata?.namespace}:${targetPortNumber ||
-        80}`;
+function getTargetUrlFromService(
+    service: k8s.V1Service,
+    targetPort: string | number | undefined,
+    protocol: 'http' | 'https'
+) {
+    const targetPortNumber =
+        getTargetPortNumber(service, targetPort) || (protocol === 'http' ? 80 : 443);
+    const { name, namespace } = service.metadata || {};
+
+    return `${protocol}://${name}.${namespace}:${targetPortNumber}`;
 }
 
 async function readSecretOrString(

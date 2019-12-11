@@ -1,5 +1,7 @@
 export const HOST = 'kube-auth-proxy/host';
 export const TARGET_PORT = 'kube-auth-proxy/targetPort';
+export const PROTOCOL = 'kube-auth-proxy/protocol';
+export const VALIDATE_CERTIFICATE = 'kube-auth-proxy/validateCertificate';
 export const BEARER_TOKEN_SECRET = 'kube-auth-proxy/bearerTokenSecret';
 export const BASIC_AUTH_USERNAME = 'kube-auth-proxy/basicAuthUsername';
 export const BASIC_AUTH_PASSWORD = 'kube-auth-proxy/basicAuthPassword';

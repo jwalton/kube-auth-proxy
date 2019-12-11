@@ -27,6 +27,7 @@ describe('targets', function() {
                 wsTargetUrl: 'ws://theservice.default/',
                 host: 'prometheus',
                 conditions: [],
+                validateCertificate: true,
                 headers: undefined,
             });
         });
@@ -120,6 +121,7 @@ describe('targets', function() {
                 wsTargetUrl: 'ws://theservice.default/',
                 host: 'prometheus',
                 conditions: [],
+                validateCertificate: true,
                 headers: {
                     authorization: 'Bearer secret',
                 },

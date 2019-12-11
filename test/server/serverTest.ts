@@ -53,6 +53,7 @@ describe('Server Tests', function() {
             targetUrl: `http://localhost:${testPort}`,
             wsTargetUrl: `ws://localhost:${testPort}`,
             conditions: [{ allowedUsers: USER_JWALTON.username } as any],
+            validateCertificate: true,
         };
     });
 

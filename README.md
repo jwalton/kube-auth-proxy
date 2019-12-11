@@ -145,6 +145,11 @@ be able to connect.
 - `kube-auth-proxy/targetPort` - The port to forward traffic to. This can either
   be the name of a port in the service's `ports` section, or it can be a numeric
   port.
+- `kube-auth-proxy/protocol` - The protocol to use to communicate with the
+  back end - "http" or "https". Defaults to "http".
+- `kube-auth-proxy/validateCertificate` - If "protocol" is https, and this is
+  "false", then kube-auth-proxy will not validate the target service's certificate.
+  Defaults to "true".
 - `kube-auth-proxy/bearerTokenSecret` - A reference to a secret, used to populate
   a bearer token header when requests are sent to the target service. For example:
 
@@ -237,6 +242,8 @@ target:
   to:
     service: kubernetes-dashboard
     targetPort: 443
+    protocol: https
+    validateCertificate: false
   bearerTokenSecret:
     secretRegex: '^kubernetes-dashboard-token.*$'
     dataName: 'token'

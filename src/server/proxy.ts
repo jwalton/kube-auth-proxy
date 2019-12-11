@@ -31,10 +31,15 @@ export default function proxyMiddleware(): express.RequestHandler {
             };
         }
 
-        proxy.web(req, res, { target: proxyTarget.targetUrl }, err => {
-            if (err) {
-                next(err);
+        proxy.web(
+            req,
+            res,
+            { target: proxyTarget.targetUrl, secure: proxyTarget.validateCertificate },
+            err => {
+                if (err) {
+                    next(err);
+                }
             }
-        });
+        );
     };
 }
