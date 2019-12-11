@@ -47,5 +47,5 @@ jobs:
           [ "$VERSION" == "master" ] && VERSION=latest
           echo IMAGE_NAME=$IMAGE_NAME
           echo VERSION=$VERSION
-          docker tag image $IMAGE_NAME:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_NAME:$VERSION
           docker push $IMAGE_NAME:$VERSION
