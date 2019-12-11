@@ -19,7 +19,7 @@ auth:
     clientID: 'YOUR-CLIENT-ID-HERE'
     clientSecret: 'YOUR-CLIENT-SECRET-HERE'
 # defaultConditions:
-#   - githubAllowedOrganizations: YOUR-ORG-HERE
+#   githubAllowedOrganizations: YOUR-ORG-HERE
 
 # You can define a static set of services to forward traffic to
 
