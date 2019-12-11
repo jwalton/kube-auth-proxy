@@ -1,5 +1,4 @@
 import express from 'express';
-import http from 'http';
 import passport from 'passport';
 import { Condition, SanitizedKubeAuthProxyConfig } from '../types';
 import { CompiledProxyTarget } from '../targets';
@@ -50,10 +49,5 @@ export interface AuthModule {
      * else, then the default email and username related conditions will all
      * be checked for you already.
      */
-    authorize?(
-        user: Express.User,
-        condition: Condition,
-        target: CompiledProxyTarget,
-        req: http.IncomingMessage
-    ): boolean;
+    authorize?(user: Express.User, condition: Condition, target: CompiledProxyTarget): boolean;
 }
