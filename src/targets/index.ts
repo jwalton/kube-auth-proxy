@@ -77,10 +77,14 @@ export function isServiceNameAndNamespace(
 export async function compileProxyTarget(
     k8sApi: k8s.CoreV1Api | undefined,
     target: RawProxyTarget,
-    defaultConditions: Condition[]
+    defaultConditions: Condition[],
+    options: {
+        defaultNamespace?: string;
+    } = {}
 ): Promise<CompiledProxyTarget> {
     let targetUrl: string;
     const { to } = target;
+    let defaultNamespace = options.defaultNamespace;
 
     if ('targetUrl' in to && typeof to.targetUrl === 'string') {
         targetUrl = to.targetUrl;
@@ -95,8 +99,10 @@ export async function compileProxyTarget(
             throw new Error(`Can't find service ${namespace}/${to.service}`);
         }
         targetUrl = getTargetUrlFromService(service.body, to.targetPort);
+        defaultNamespace = defaultNamespace || namespace;
     } else if ('service' in to && typeof to.service !== 'string') {
         targetUrl = getTargetUrlFromService(to.service, to.targetPort);
+        defaultNamespace = defaultNamespace || to.service.metadata?.namespace;
     } else {
         throw new Error(`Need one of target.targetUrl or target.service`);
     }
@@ -107,17 +113,20 @@ export async function compileProxyTarget(
 
     let headers: Headers | undefined;
 
-    const bearerToken = await readSecretOrString(k8sApi, target.bearerTokenSecret, undefined);
+    const bearerToken = await readSecretOrString(k8sApi, {
+        secret: target.bearerTokenSecret,
+        defaultNamespace,
+    });
     if (bearerToken) {
         headers = addHeader(headers, 'authorization', `Bearer ${bearerToken}`);
     }
 
     const username = target.basicAuthUsername;
-    const password = await readSecretOrString(
-        k8sApi,
-        target.basicAuthPasswordSecret,
-        target.basicAuthPassword
-    );
+    const password = await readSecretOrString(k8sApi, {
+        secret: target.basicAuthPasswordSecret,
+        value: target.basicAuthPassword,
+        defaultNamespace,
+    });
     if (username && password) {
         const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
         headers = addHeader(headers, 'authorization', `Basic ${basicAuth}`);
@@ -254,16 +263,19 @@ function getTargetUrlFromService(service: k8s.V1Service, targetPort: string | nu
 
 async function readSecretOrString(
     k8sApi: k8s.CoreV1Api | undefined,
-    secret?: K8sSecretSpecifier,
-    str?: string
+    options: {
+        secret?: K8sSecretSpecifier;
+        value?: string;
+        defaultNamespace?: string;
+    }
 ) {
-    if (str) {
-        return str;
-    } else if (secret) {
+    if (options.value) {
+        return options.value;
+    } else if (options.secret) {
         if (!k8sApi) {
             throw new Error(`Can't specify secret without kubernetes.`);
         }
-        return await readSecret(k8sApi, secret);
+        return await readSecret(k8sApi, options.secret, options.defaultNamespace);
     } else {
         return undefined;
     }

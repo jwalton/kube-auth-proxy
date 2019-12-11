@@ -2,12 +2,12 @@ import * as k8s from '@kubernetes/client-node';
 
 export type K8sSecretSpecifier =
     | {
-          namespace: string;
+          namespace?: string;
           secretName: string;
           dataName: string;
       }
     | {
-          namespace: string;
+          namespace?: string;
           secretRegex: RegExp;
           dataName: string;
       };
@@ -55,15 +55,27 @@ export function parseSecretSpecifier(defaultNamespace: string, spec: string, sou
 /**
  * Get the value of a secret from Kubernetes.
  */
-export async function readSecret(k8sApi: k8s.CoreV1Api, secret: K8sSecretSpecifier) {
+export async function readSecret(
+    k8sApi: k8s.CoreV1Api,
+    secret: K8sSecretSpecifier,
+    defaultNamespace?: string
+) {
     const name = `${secret.namespace}/${
         'secretName' in secret ? secret.secretName : secret.secretRegex
     }`;
 
     const secretObj =
         'secretName' in secret
-            ? await getSecret(k8sApi, secret.namespace, secret.secretName)
-            : await getSecretFromRegex(k8sApi, secret.namespace, secret.secretRegex);
+            ? await getSecret(
+                  k8sApi,
+                  secret.namespace || defaultNamespace || 'default',
+                  secret.secretName
+              )
+            : await getSecretFromRegex(
+                  k8sApi,
+                  secret.namespace || defaultNamespace || 'default',
+                  secret.secretRegex
+              );
 
     const base64Data = secretObj.data?.[secret.dataName];
     if (!base64Data) {

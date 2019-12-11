@@ -169,7 +169,7 @@ class ConfigWatcher extends EventEmitter {
 
                 const source = toSource(type, namespace, name);
                 const rawTargets = getRawTargets(obj, source);
-                this._updateSource(k8sApi, rawTargets, source, defaultConditions);
+                this._updateSource(k8sApi, namespace, rawTargets, source, defaultConditions);
             }
         });
 
@@ -217,6 +217,7 @@ class ConfigWatcher extends EventEmitter {
      */
     private async _updateSource(
         k8sApi: k8s.CoreV1Api,
+        namespace: string,
         rawTargets: RawProxyTarget[],
         source: string,
         defaultConditions: Condition[]
@@ -229,7 +230,11 @@ class ConfigWatcher extends EventEmitter {
             this._deleteSource(source);
         } else {
             Promise.all(
-                rawTargets.map(target => compileProxyTarget(k8sApi, target, defaultConditions))
+                rawTargets.map(target =>
+                    compileProxyTarget(k8sApi, target, defaultConditions, {
+                        defaultNamespace: namespace,
+                    })
+                )
             )
                 .then(compiledTargets => {
                     if (this._objectRevision[source] !== revision) {
