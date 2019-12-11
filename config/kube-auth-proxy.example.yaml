@@ -1,0 +1,31 @@
+# The top-level domain to proxy connections for.
+domain: localhost:5050
+
+# Port number to listen on.
+# port: 5050
+
+# A list of Kubernetes namespaces to watch.  If omitted, will watch all namespaces.
+# namespaces: ['prod', 'demo', 'test']
+
+# The secret used to encrypt session cookies.  If not present, a random secret
+# will be generated.  Need to set this if you're running more than one
+# kube-auth-proxy.  If this is not set, sessions will be terminated if
+# kube-auth-proxy restarts.
+sessionSecret: SECRET
+secureCookies: true
+
+auth:
+  github:
+    clientID: 'YOUR-CLIENT-ID-HERE'
+    clientSecret: 'YOUR-CLIENT-SECRET-HERE'
+# defaultConditions:
+#   - githubAllowedOrganizations: YOUR-ORG-HERE
+
+# You can define a static set of services to forward traffic to
+
+# defaultTargets:
+#   - host: localhost:5050
+#     to:
+#       targetUrl: http://localhost:3000
+#     conditions:
+#       githubAllowedOrganizations: YOUR-ORG-HERE
