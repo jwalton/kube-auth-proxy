@@ -8,7 +8,7 @@ export type K8sSecretSpecifier =
       }
     | {
           namespace?: string;
-          secretRegex: RegExp;
+          secretRegex: RegExp | string;
           dataName: string;
       };
 
@@ -64,18 +64,24 @@ export async function readSecret(
         'secretName' in secret ? secret.secretName : secret.secretRegex
     }`;
 
-    const secretObj =
-        'secretName' in secret
-            ? await getSecret(
-                  k8sApi,
-                  secret.namespace || defaultNamespace || 'default',
-                  secret.secretName
-              )
-            : await getSecretFromRegex(
-                  k8sApi,
-                  secret.namespace || defaultNamespace || 'default',
-                  secret.secretRegex
-              );
+    let secretObj: k8s.V1Secret;
+    if ('secretName' in secret) {
+        secretObj = await getSecret(
+            k8sApi,
+            secret.namespace || defaultNamespace || 'default',
+            secret.secretName
+        );
+    } else {
+        let regex = secret.secretRegex;
+        if (typeof regex === 'string') {
+            regex = new RegExp(regex);
+        }
+        secretObj = await getSecretFromRegex(
+            k8sApi,
+            secret.namespace || defaultNamespace || 'default',
+            regex
+        );
+    }
 
     const base64Data = secretObj.data?.[secret.dataName];
     if (!base64Data) {
