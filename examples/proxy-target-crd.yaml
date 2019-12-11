@@ -1,0 +1,13 @@
+apiVersion: kube-auth-proxy.thedreaming.org/v1beta1
+kind: ProxyTarget
+metadata:
+  name: rabbit-mq
+  labels:
+    type: kube-auth-proxy-config
+target:
+  host: rabbitmq
+  to:
+    service: rabbitmq
+    targetPort: 15672
+  username: guest
+  password: guest

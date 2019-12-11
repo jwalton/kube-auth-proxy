@@ -6,7 +6,7 @@ import { DEFAULT_METRICS_PORT, readConfig, validateConfig } from './config';
 import TargetManager from './TargetManager';
 import { startMetricsServer } from './metrics';
 import { startServer as startProxyServer } from './server/index';
-import { CompiledProxyTarget, compileProxyTarget, parseTargetsFromFile } from './Targets';
+import { CompiledProxyTarget, compileProxyTarget, parseTargetsFromFile } from './targets';
 import * as log from './utils/logger';
 
 async function start() {
@@ -53,8 +53,7 @@ async function start() {
         kubeConfig,
         domain: config.domain,
         namespaces: config.namespaces,
-        configMapSelector: config.configMapSelector,
-        secretSelector: config.secretSelector,
+        proxyTargetSelector: config.proxyTargetSelector,
     });
 
     startProxyServer(config, proxyTargets, authModules);

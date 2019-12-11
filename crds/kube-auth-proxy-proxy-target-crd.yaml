@@ -1,0 +1,130 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: proxytargets.kube-auth-proxy.thedreaming.org
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: kube-auth-proxy.thedreaming.org
+  # list of versions supported by this CustomResourceDefinition
+  versions:
+    - name: v1beta1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+  # either Namespaced or Cluster
+  scope: Namespaced
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: proxytargets
+    # singular name to be used as an alias on the CLI and for display
+    singular: proxytarget
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: ProxyTarget
+  validation:
+    openAPIV3Schema:
+      type: object
+      required:
+        - target
+      properties:
+        target:
+          type: object
+          required:
+            - host
+            - to
+          properties:
+            host:
+              description: |
+                kube-auth-proxy will forward traffic to this endpoint if the
+                "host" header in the request is `${host}.${domain}` or is
+                this string.
+              type: string
+            to:
+              oneOf:
+                - required: ['targetUrl']
+                  properties:
+                    targetUrl:
+                      type: string
+                - required: ['service', 'targetPort']
+                  properties:
+                    service:
+                      type: string
+                    targetPort:
+                      oneOf:
+                        - type: string
+                        - type: integer
+              type: object
+              properties:
+                targetUrl:
+                  type: string
+                service:
+                  type: string
+                targetPort:
+                  oneOf:
+                    - type: string
+                    - type: integer
+                namespace:
+                  type: string
+            bearerTokenSecret:
+              type: object
+              required:
+                - dataName
+              properties:
+                secretName:
+                  type: string
+                secretRegex:
+                  type: string
+                dataName:
+                  type: string
+              oneOf:
+                - required: ['secretName']
+                  properties:
+                    secretName:
+                      type: string
+                - required: ['secretRegex']
+                  properties:
+                    secretRegex:
+                      type: string
+            basicAuthUsername:
+              type: string
+            basicAuthPassword:
+              type: string
+            basicAuthPasswordSecret:
+              type: object
+              required:
+                - dataName
+              properties:
+                secretName:
+                  type: string
+                secretRegex:
+                  type: string
+                dataName:
+                  type: string
+              oneOf:
+                - required: ['secretName']
+                  properties:
+                    secretName:
+                      type: string
+                - required: ['secretRegex']
+                  properties:
+                    secretRegex:
+                      type: string
+            conditions:
+              type: object
+              properties:
+                allowedEmails:
+                  type: array
+                  items: { type: string }
+                emailDomains:
+                  type: array
+                  items: { type: string }
+                githubAllowedOrganizations:
+                  type: array
+                  items: { type: string }
+                githutAllowedUsers:
+                  type: array
+                  items: { type: string }
+                githubAllowedTeams:
+                  type: array
+                  items: { type: string }

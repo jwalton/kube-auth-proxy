@@ -1,26 +1,30 @@
 import * as k8s from '@kubernetes/client-node';
 import _ from 'lodash';
 import { URL } from 'url';
-import { K8sSecretSpecifier, readSecret } from './k8sConfig/k8sUtils';
-import { Condition, RawCondition } from './types';
-import * as log from './utils/logger';
+import { K8sSecretSpecifier, readSecret } from '../k8sConfig/k8sUtils';
+import { Condition, RawCondition } from '../types';
+import * as log from '../utils/logger';
 
-export type ServiceSpecifier =
+export type TargetSpecifier =
     | {
           namespace?: string;
           service: string;
+          targetPort: string | number;
       }
-    | { service: k8s.V1Service }
+    | {
+          service: k8s.V1Service;
+          targetPort: string | number;
+      }
     | {
           targetUrl: string;
       };
 
-export type RawProxyTarget = ServiceSpecifier & {
+export type RawProxyTarget = {
     /** A key which uniquely identifies the "source" of the ProxyTarget. */
     key: string;
     source: string;
     host: string;
-    targetPort?: string | number;
+    to: TargetSpecifier;
     bearerTokenSecret?: K8sSecretSpecifier;
     basicAuthUsername?: string;
     basicAuthPassword?: string;
@@ -60,11 +64,12 @@ export interface CompiledProxyTarget {
     headers?: Headers;
 }
 
-function isSerivceNameAndNamespace(
-    target: ServiceSpecifier
+export function isServiceNameAndNamespace(
+    target: TargetSpecifier
 ): target is {
     namespace?: string;
     service: string;
+    targetPort: string;
 } {
     return 'service' in target && typeof target.service === 'string';
 }
@@ -75,22 +80,23 @@ export async function compileProxyTarget(
     defaultConditions: Condition[]
 ): Promise<CompiledProxyTarget> {
     let targetUrl: string;
+    const { to } = target;
 
-    if ('targetUrl' in target && typeof target.targetUrl === 'string') {
-        targetUrl = target.targetUrl;
-    } else if (isSerivceNameAndNamespace(target)) {
+    if ('targetUrl' in to && typeof to.targetUrl === 'string') {
+        targetUrl = to.targetUrl;
+    } else if (isServiceNameAndNamespace(to)) {
         if (!k8sApi) {
-            throw new Error(`Can't load service ${target.service} without kubernetes.`);
+            throw new Error(`Can't load service ${to.service} without kubernetes.`);
         }
-        const namespace = target.namespace || 'default';
+        const namespace = to.namespace || 'default';
 
-        const service = await k8sApi.readNamespacedService(target.service, namespace);
+        const service = await k8sApi.readNamespacedService(to.service, namespace);
         if (!service || !service.body) {
-            throw new Error(`Can't find service ${namespace}/${target.service}`);
+            throw new Error(`Can't find service ${namespace}/${to.service}`);
         }
-        targetUrl = getTargetUrlFromService(service.body, target.targetPort);
-    } else if ('service' in target && typeof target.service !== 'string') {
-        targetUrl = getTargetUrlFromService(target.service, target.targetPort);
+        targetUrl = getTargetUrlFromService(service.body, to.targetPort);
+    } else if ('service' in to && typeof to.service !== 'string') {
+        targetUrl = getTargetUrlFromService(to.service, to.targetPort);
     } else {
         throw new Error(`Need one of target.targetUrl or target.service`);
     }
@@ -150,8 +156,8 @@ export function parseTargetsFromFile(
     }
 
     uniqueTargets.forEach(target => {
-        if (isSerivceNameAndNamespace(target)) {
-            target.namespace = namespace || target.namespace;
+        if (isServiceNameAndNamespace(target.to)) {
+            target.to.namespace = target.to.namespace || namespace;
         }
         target.source = source;
         target.key = `${source}/${filename}/${target.host}`;

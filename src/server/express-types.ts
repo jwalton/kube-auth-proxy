@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { CompiledProxyTarget } from '../Targets';
+import { CompiledProxyTarget } from '../targets';
 import { KubeAuthProxyUser } from '../types';
 
 declare global {

@@ -1,5 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
-import { RawProxyTarget } from './Targets';
+import { RawProxyTarget } from './targets';
 import { LogLevel } from './utils/logger';
 
 export interface KubeAuthProxyUser {
@@ -72,8 +72,7 @@ export interface RawKubeAuthProxyConfig {
 
     logLevel?: LogLevel;
 
-    configMapSelector?: k8s.V1LabelSelector;
-    secretSelector?: k8s.V1LabelSelector;
+    proxyTargetSelector?: k8s.V1LabelSelector;
 }
 
 export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {

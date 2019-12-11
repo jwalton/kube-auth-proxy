@@ -1,7 +1,7 @@
 import chai from 'chai';
 import 'mocha';
-import { compileProxyTarget } from '../src/Targets';
-import { createMockK8sApi } from './fixtures/mockK8sApi';
+import { compileProxyTarget } from '../../src/targets/index';
+import { createMockK8sApi } from '../fixtures/mockK8sApi';
 
 const { expect } = chai;
 
@@ -14,7 +14,7 @@ describe('targets', function() {
                     key: 'test',
                     source: 'test',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                 },
                 []
             );
@@ -38,7 +38,7 @@ describe('targets', function() {
                     key: 'test',
                     source: 'test',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                 },
                 [
                     {
@@ -61,7 +61,7 @@ describe('targets', function() {
                     key: 'test',
                     source: 'test',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                     conditions: {
                         githubAllowedOrganizations: ['exegesis-js'],
                     },
@@ -101,9 +101,8 @@ describe('targets', function() {
                 {
                     key: 'test',
                     source: 'test',
-                    namespace: 'default',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                     bearerTokenSecret: {
                         namespace: 'default',
                         secretName: 'thesecret',
@@ -148,9 +147,8 @@ describe('targets', function() {
                 {
                     key: 'test',
                     source: 'test',
-                    namespace: 'default',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                     basicAuthUsername: 'jwalton',
                     basicAuthPasswordSecret: {
                         namespace: 'default',
@@ -172,9 +170,8 @@ describe('targets', function() {
                 {
                     key: 'test',
                     source: 'test',
-                    namespace: 'default',
                     host: 'prometheus',
-                    targetUrl: 'http://theservice.default:80',
+                    to: { targetUrl: 'http://theservice.default:80' },
                     basicAuthUsername: 'jwalton',
                     basicAuthPassword: 'secret',
                 },

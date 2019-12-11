@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import passport from 'passport';
 import { Condition, SanitizedKubeAuthProxyConfig } from '../types';
-import { CompiledProxyTarget } from '../Targets';
+import { CompiledProxyTarget } from '../targets';
 
 export interface AuthModule {
     /**

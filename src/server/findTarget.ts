@@ -1,6 +1,6 @@
 import express from 'express';
 import { noTargetFound } from '../metrics';
-import { CompiledProxyTarget } from '../Targets';
+import { CompiledProxyTarget } from '../targets';
 import * as log from '../utils/logger';
 
 export interface ProxyTargetFinder {

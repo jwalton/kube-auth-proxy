@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { promises as fs } from 'fs';
 import jsYaml from 'js-yaml';
-import { getConditions } from './Targets';
+import { getConditions } from './targets';
+import { validateProxyTarget } from './targets/validation';
 import { RawKubeAuthProxyConfig, SanitizedKubeAuthProxyConfig } from './types';
 
 export const DEFAULT_PORT = 5050;
@@ -86,11 +87,14 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
         []
     );
 
-    // FIXME: Validation for targets.
-    config.defaultTargets = (config.defaultTargets || []).map((forward, index) => ({
-        ...forward,
+    config.defaultTargets = (config.defaultTargets || []).map((proxyTarget, index) => ({
+        ...proxyTarget,
+        source: 'static-config',
         key: `config-${index}`,
     }));
+    for (const target of config.defaultTargets || []) {
+        validateProxyTarget(target);
+    }
 
     return config as SanitizedKubeAuthProxyConfig;
 }

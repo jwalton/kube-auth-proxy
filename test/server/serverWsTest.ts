@@ -7,7 +7,7 @@ import pEvent from 'p-event';
 import WebSocket from 'ws';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
 import { startServer } from '../../src/server';
-import { CompiledProxyTarget } from '../../src/Targets';
+import { CompiledProxyTarget } from '../../src/targets';
 import { SanitizedKubeAuthProxyConfig } from '../../src/types';
 import { makeSessionCookieForUser } from '../fixtures/makeSessionCookie';
 import MockAuthModule from '../fixtures/MockAuthModule';

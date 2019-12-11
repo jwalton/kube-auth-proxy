@@ -6,6 +6,11 @@
 
 Securely expose your private Kubernetes services.
 
+## BETA
+
+This project is very beta. We're using it in production, but this is undergoing
+active development, and may change quite a bit without warning.
+
 ## Description
 
 kube-auth-proxy is a Kubernetes-aware authorizing reverse proxy, designed as
@@ -192,24 +197,28 @@ members of "myorg" will be allowed to access you service).
 - `kube-auth-proxy/githubAllowedUsers` - A comma delimited list of github
   users allowed to access this service. Note that this is not case sensitive.
 
-## Configuring Services with Configmaps and Secrets
+## Configuring Services with ProxyTarget CRDs
 
 Adding annotations to services is the preferred way to configure kube-auth-proxy,
 but sometimes it is impractical - for example perhaps you have a service
 you've installed via helm, and the helm chart doesn't give you an easy way to
 add annotations to the service.
 
-In these cases, you can configure services using configmaps or secrets. In your
-kube-auth-proxy config file, add the following top-level items:
+In these cases, you can configure services using a ProxyTarget CRD. First,
+install the CRD:
+
+````sh
+$ kubectl apply -f https://raw.githubusercontent.com/jwalton/kube-auth-proxy/master/crds/kube-auth-proxy-proxy-target-crd.yaml
+``
+
+You can restrict which proxy targets will be considered in the config file using
+label selectors:
 
 ```yaml
-configMapSelector:
+proxyTargetSelector:
   matchLabels:
     type: kube-auth-proxy-config
-secretSelector:
-  matchLabels:
-    type: kube-auth-proxy-config
-```
+````
 
 This make it so kube-auth-proxy will actively watch secrets and configmaps with
 the label "kube-auth-proxy-config". It will load all data inside any such
@@ -217,34 +226,28 @@ configmap or secret found, and try to parse it as a YAML config file. Here's
 an example config file for the kubernetes dashboard:
 
 ```yaml
-apiVersion: v1
-kind: Secret
+apiVersion: kube-auth-proxy.thedreaming.org/v1beta1
+kind: ProxyTarget
 metadata:
-  name: kube-auth-proxy-kubernetes-dashboard
+  name: rabbit-mq
   labels:
     type: kube-auth-proxy-config
-type: Opaque
-stringData:
-  services.yaml: |
-    targets:
-      - host: dashboard
-        service: kubernetes-dashboard
-        targetPort: 443
-        bearerTokenSecret:
-          - secretRegex: '^kubernetes-dashboard-token.*$'
-          - dataName: 'token'
-        conditions:
-          githubAllowedTeams: devOps@MY-ORG-HERE
+target:
+  host: dashboard
+  to:
+    service: kubernetes-dashboard
+    targetPort: 443
+  bearerTokenSecret:
+    secretRegex: '^kubernetes-dashboard-token.*$'
+    dataName: 'token'
+  conditions:
+    githubAllowedTeams: devOps@MY-ORG-HERE
 ```
 
-Inside a `target`, you can use any annotation you could use on a service
+Inside a `target`, you can use (almost) any annotation you could use on a service
 (minus the "kube-auth-proxy/" prefix). Condition annotations must be in the
-"conditions" section. In addition, you can specify the following:
-
-- `targetUrl` - As an alternative to `service`, you can specify a target URL directly.
-- `service` - The name of the service to forward traffic to. Ignored if
-  `targetUrl` is set.
-- `namespace` - The namespace of the target service. Ignored if `targetUrl` is set.
+"conditions" section. In addition, you must specify a `to` which must
+either be a `{targetUrl}` or a `{service, targetPort, namespace?}` object.
 
 ## Run locally in minikube
 

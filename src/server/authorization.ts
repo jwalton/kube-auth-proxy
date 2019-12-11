@@ -1,7 +1,7 @@
 import http from 'http';
 import { AuthModule } from '../authModules/AuthModule';
 import { notAuthorizedCount } from '../metrics';
-import { CompiledProxyTarget } from '../Targets';
+import { CompiledProxyTarget } from '../targets';
 import { Condition, KubeAuthProxyUser } from '../types';
 import { intersectionNotEmpty } from '../utils/utils';
 

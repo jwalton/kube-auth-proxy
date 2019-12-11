@@ -1,20 +1,20 @@
 import * as k8s from '@kubernetes/client-node';
 import { EventEmitter } from 'events';
-import jsYaml from 'js-yaml';
 import _ from 'lodash';
 import prometheus from 'prom-client';
 import {
     CompiledProxyTarget,
     compileProxyTarget,
-    parseTargetsFromFile,
+    isServiceNameAndNamespace,
     RawProxyTarget,
-} from '../Targets';
+} from '../targets';
 import { Condition, RawCondition } from '../types';
 import * as log from '../utils/logger';
 import { parseCommaDelimitedList } from '../utils/utils';
 import * as annotationNames from './annotationNames';
-import { decodeSecret, labelSelectorToQueryParam, parseSecretSpecifier } from './k8sUtils';
+import { labelSelectorToQueryParam, parseSecretSpecifier } from './k8sUtils';
 import K8sWatcher from './K8sWatcher';
+import { ProxyTargetCrd } from './types';
 
 export const updateSeen = new prometheus.Counter({
     name: 'kube_auth_proxy_k8s_update_seen',
@@ -51,8 +51,7 @@ declare interface ConfigWatcher {
 class ConfigWatcher extends EventEmitter {
     // TODO: Look into replacing this with an "informer"?
     private _serviceWatcher: K8sWatcher<k8s.V1Service>;
-    private _configMapWatcher: K8sWatcher<k8s.V1ConfigMap> | undefined;
-    private _secretWatcher: K8sWatcher<k8s.V1Secret> | undefined;
+    private _proxyTargetWatcher: K8sWatcher<ProxyTargetCrd> | undefined;
 
     private _configsBySource: { [source: string]: CompiledProxyTarget[] } = {};
     private _namespaces: string[] | undefined;
@@ -68,8 +67,7 @@ class ConfigWatcher extends EventEmitter {
         options: {
             namespaces?: string[];
             defaultConditions?: Condition[];
-            configMapSelector?: k8s.V1LabelSelector;
-            secretSelector?: k8s.V1LabelSelector;
+            proxyTargetSelector?: k8s.V1LabelSelector;
         } = {}
     ) {
         super();
@@ -82,39 +80,37 @@ class ConfigWatcher extends EventEmitter {
         //     k8sApi,
         //     options.defaultConditions || []
         // );
-        this._serviceWatcher = this._watchObjects(
+        this._serviceWatcher = this._watchObjects({
             kubeConfig,
             k8sApi,
-            options.defaultConditions || [],
-            'service',
-            '/api/v1/services',
-            undefined,
-            serviceToTargets
-        );
+            defaultConditions: options.defaultConditions || [],
+            type: 'service',
+            resourceUrl: '/api/v1/services',
+            getRawTargets: serviceToTargets,
+        });
 
-        if (options.configMapSelector) {
-            this._configMapWatcher = this._watchObjects(
-                kubeConfig,
-                k8sApi,
-                options.defaultConditions || [],
-                'configmap',
-                '/api/v1/configmaps',
-                options.configMapSelector,
-                configMapToTargets
-            );
-        }
-
-        if (options.secretSelector) {
-            this._secretWatcher = this._watchObjects(
-                kubeConfig,
-                k8sApi,
-                options.defaultConditions || [],
-                'secret',
-                '/api/v1/secrets',
-                options.secretSelector,
-                secretToTargets
-            );
-        }
+        this._proxyTargetWatcher = this._watchObjects({
+            kubeConfig,
+            k8sApi,
+            defaultConditions: options.defaultConditions || [],
+            type: 'proxyTarget',
+            resourceUrl: '/apis/kube-auth-proxy.thedreaming.org/v1beta1/proxytargets',
+            labelSelector: options.proxyTargetSelector,
+            getRawTargets(proxyTarget) {
+                if (isServiceNameAndNamespace(proxyTarget.target.to)) {
+                    proxyTarget.target.to.namespace =
+                        proxyTarget.target.to.namespace || proxyTarget.metadata?.namespace;
+                }
+                return [proxyTarget.target];
+            },
+            onErr(err: Error) {
+                if (err.message === 'Not Found') {
+                    log.warn('ProxyTarget CRD not installed.');
+                } else {
+                    throw err;
+                }
+            },
+        });
     }
 
     /**
@@ -124,28 +120,35 @@ class ConfigWatcher extends EventEmitter {
         this.removeAllListeners();
 
         this._serviceWatcher.close();
-        if (this._configMapWatcher) {
-            this._configMapWatcher.close();
-        }
-        if (this._secretWatcher) {
-            this._secretWatcher.close();
-        }
+        this._proxyTargetWatcher?.close();
 
         for (const source of Object.keys(this._configsBySource)) {
             this._deleteSource(source);
         }
     }
 
-    private _watchObjects<T extends { metadata?: k8s.V1ObjectMeta }>(
-        kubeConfig: k8s.KubeConfig,
-        k8sApi: k8s.CoreV1Api,
-        defaultConditions: Condition[],
-        type: string,
-        url: string,
-        labelSelector: k8s.V1LabelSelector | undefined,
-        getRawTargets: (obj: T, source: string) => RawProxyTarget[]
-    ) {
-        const watchUrl = `${url}${labelSelectorToQueryParam(labelSelector)}`;
+    private _watchObjects<T extends { metadata?: k8s.V1ObjectMeta }>(params: {
+        kubeConfig: k8s.KubeConfig;
+        k8sApi: k8s.CoreV1Api;
+        defaultConditions: Condition[];
+        type: string;
+        resourceUrl: string;
+        getRawTargets: (obj: T, source: string) => RawProxyTarget[];
+        labelSelector?: k8s.V1LabelSelector;
+        onErr?: (err: Error) => void;
+    }) {
+        const {
+            kubeConfig,
+            k8sApi,
+            defaultConditions,
+            type,
+            resourceUrl,
+            labelSelector,
+            getRawTargets,
+            onErr,
+        } = params;
+
+        const watchUrl = `${resourceUrl}${labelSelectorToQueryParam(labelSelector)}`;
         const watcher: K8sWatcher<T> = new K8sWatcher(kubeConfig, watchUrl);
 
         log.info(`Watching ${type}s for updates (${watchUrl})`);
@@ -178,7 +181,17 @@ class ConfigWatcher extends EventEmitter {
             }
         });
 
-        watcher.on('error', err => this.emit('error', err));
+        watcher.on('error', err => {
+            if (onErr) {
+                try {
+                    onErr(err);
+                } catch (err) {
+                    this.emit('error', err);
+                }
+            } else {
+                this.emit('error', err);
+            }
+        });
 
         return watcher;
     }
@@ -320,8 +333,10 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
             key: source,
             source: source,
             host: annotations[annotationNames.HOST],
-            service,
-            targetPort: annotations[annotationNames.TARGET_PORT],
+            to: {
+                service,
+                targetPort: annotations[annotationNames.TARGET_PORT],
+            },
             bearerTokenSecret: bearerTokenSecret
                 ? parseSecretSpecifier(
                       namespace,
@@ -348,66 +363,6 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
     }
 
     return answer;
-}
-
-function configMapToTargets(configMap: k8s.V1ConfigMap, source: string) {
-    const namespace = configMap.metadata?.namespace || 'default';
-    let rawTargets: RawProxyTarget[] = [];
-    if (configMap.data) {
-        for (const file of Object.keys(configMap.data)) {
-            try {
-                const fileData = configMap.data[file];
-                rawTargets = rawTargets.concat(
-                    parseTargetsFromFile(
-                        namespace,
-                        source,
-                        file,
-                        jsYaml.safeLoad(fileData)?.targets
-                    )
-                );
-            } catch (err) {
-                log.warn(
-                    `Ignoring data from configMap ${namespace}/${name}/${file}: ${err.toString()}`
-                );
-            }
-        }
-    }
-
-    rawTargets.forEach((target, index) => {
-        target.source = source;
-        target.key = `${source}#${index}`;
-    });
-    return rawTargets;
-}
-
-function secretToTargets(secret: k8s.V1Secret, source: string) {
-    const namespace = secret.metadata?.namespace || 'default';
-    let rawTargets: RawProxyTarget[] = [];
-    if (secret.data) {
-        for (const file of Object.keys(secret.data)) {
-            try {
-                const fileData = decodeSecret(secret.data[file]);
-                rawTargets = rawTargets.concat(
-                    parseTargetsFromFile(
-                        namespace,
-                        source,
-                        file,
-                        jsYaml.safeLoad(fileData)?.targets
-                    )
-                );
-            } catch (err) {
-                log.warn(
-                    `Ignoring data from secret ${namespace}/${name}/${file}: ${err.toString()}`
-                );
-            }
-        }
-    }
-
-    rawTargets.forEach((target, index) => {
-        target.source = source;
-        target.key = `${source}#${index}`;
-    });
-    return rawTargets;
 }
 
 export default ConfigWatcher;

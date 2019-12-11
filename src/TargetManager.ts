@@ -1,8 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import prometheus from 'prom-client';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
-import { ForwardTargetFinder as ProxyTargetFinder } from './server/findTarget';
-import { CompiledProxyTarget } from './Targets';
+import { ProxyTargetFinder } from './server/findTarget';
+import { CompiledProxyTarget } from './targets';
 import * as log from './utils/logger';
 
 export const servicesProxied = new prometheus.Gauge({
@@ -34,8 +34,7 @@ export default class TargetManager implements ProxyTargetFinder {
             domain: string;
             kubeConfig?: k8s.KubeConfig;
             namespaces?: string[];
-            configMapSelector?: k8s.V1LabelSelector;
-            secretSelector?: k8s.V1LabelSelector;
+            proxyTargetSelector?: k8s.V1LabelSelector;
         }
     ) {
         this._domain = options.domain;

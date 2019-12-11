@@ -1,5 +1,5 @@
 import { ProxyTargetFinder } from '../../src/server/findTarget';
-import { CompiledProxyTarget } from '../../src/Targets';
+import { CompiledProxyTarget } from '../../src/targets';
 
 export function mockProxyTargetManager(targets: CompiledProxyTarget[]): ProxyTargetFinder {
     return {
