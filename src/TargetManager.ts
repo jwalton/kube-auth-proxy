@@ -1,8 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import prometheus from 'prom-client';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
-import { ForwardTargetFinder } from './server/findTarget';
-import { CompiledForwardTarget } from './Targets';
+import { ForwardTargetFinder as ProxyTargetFinder } from './server/findTarget';
+import { CompiledProxyTarget } from './Targets';
 import * as log from './utils/logger';
 
 export const servicesProxied = new prometheus.Gauge({
@@ -21,15 +21,15 @@ export const serviceConflicts = new prometheus.Gauge({
  * Note that this class doesn't know anything about Kubernetes.  We could
  * theoretically support other configuration backends.
  */
-export default class ForwardTargetManager implements ForwardTargetFinder {
+export default class TargetManager implements ProxyTargetFinder {
     private _configWatch?: ConfigWatcher;
     private _domain: string;
-    private _targetByKey: { [key: string]: CompiledForwardTarget } = {};
+    private _targetByKey: { [key: string]: CompiledProxyTarget } = {};
     // This is generated from `_configsByKey` by calling `_rebuildConfigsByHost()`.
-    private _targetsByHost: { [host: string]: CompiledForwardTarget } = {};
+    private _targetsByHost: { [host: string]: CompiledProxyTarget } = {};
 
     constructor(
-        defaultTargets: CompiledForwardTarget[],
+        defaultTargets: CompiledProxyTarget[],
         options: {
             domain: string;
             kubeConfig?: k8s.KubeConfig;

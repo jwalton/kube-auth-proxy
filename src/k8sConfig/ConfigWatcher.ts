@@ -4,10 +4,10 @@ import jsYaml from 'js-yaml';
 import _ from 'lodash';
 import prometheus from 'prom-client';
 import {
-    CompiledForwardTarget,
-    compileForwardTarget,
+    CompiledProxyTarget,
+    compileProxyTarget,
     parseTargetsFromFile,
-    RawForwardTarget,
+    RawProxyTarget,
 } from '../Targets';
 import { Condition, RawCondition } from '../types';
 import * as log from '../utils/logger';
@@ -37,11 +37,11 @@ export const serviceUpdateErrors = new prometheus.Counter({
 });
 
 declare interface ConfigWatcher {
-    emit(event: 'updated', data: CompiledForwardTarget): boolean;
-    emit(event: 'deleted', data: CompiledForwardTarget): boolean;
+    emit(event: 'updated', data: CompiledProxyTarget): boolean;
+    emit(event: 'deleted', data: CompiledProxyTarget): boolean;
     emit(event: 'error', err: Error): boolean;
-    on(event: 'updated', listener: (data: CompiledForwardTarget) => void): this;
-    on(event: 'deleted', listener: (data: CompiledForwardTarget) => void): this;
+    on(event: 'updated', listener: (data: CompiledProxyTarget) => void): this;
+    on(event: 'deleted', listener: (data: CompiledProxyTarget) => void): this;
     on(event: 'error', listener: (err: Error) => void): this;
 }
 
@@ -54,7 +54,7 @@ class ConfigWatcher extends EventEmitter {
     private _configMapWatcher: K8sWatcher<k8s.V1ConfigMap> | undefined;
     private _secretWatcher: K8sWatcher<k8s.V1Secret> | undefined;
 
-    private _configsBySource: { [source: string]: CompiledForwardTarget[] } = {};
+    private _configsBySource: { [source: string]: CompiledProxyTarget[] } = {};
     private _namespaces: string[] | undefined;
 
     // Used to keep track of how often each object has been updated, so
@@ -143,7 +143,7 @@ class ConfigWatcher extends EventEmitter {
         type: string,
         url: string,
         labelSelector: k8s.V1LabelSelector | undefined,
-        getRawTargets: (obj: T, source: string) => RawForwardTarget[]
+        getRawTargets: (obj: T, source: string) => RawProxyTarget[]
     ) {
         const watchUrl = `${url}${labelSelectorToQueryParam(labelSelector)}`;
         const watcher: K8sWatcher<T> = new K8sWatcher(kubeConfig, watchUrl);
@@ -204,7 +204,7 @@ class ConfigWatcher extends EventEmitter {
      */
     private async _updateSource(
         k8sApi: k8s.CoreV1Api,
-        rawTargets: RawForwardTarget[],
+        rawTargets: RawProxyTarget[],
         source: string,
         defaultConditions: Condition[]
     ) {
@@ -216,26 +216,25 @@ class ConfigWatcher extends EventEmitter {
             this._deleteSource(source);
         } else {
             Promise.all(
-                rawTargets.map(target => compileForwardTarget(k8sApi, target, defaultConditions))
+                rawTargets.map(target => compileProxyTarget(k8sApi, target, defaultConditions))
             )
                 .then(compiledTargets => {
                     if (this._objectRevision[source] !== revision) {
                         log.debug(`Ignoring stale update for ${source}`);
                         staleUpdates.inc();
-                        // If `compileForwardTarget()` has to do async operations,
+                        // If `compileProxyTarget()` has to do async operations,
                         // those operations could resolve in a different order.
                         // e.g. if a service has a bearer token configured,
-                        // `compileForwardTarget()` would have to load that from K8s.
+                        // `compileProxyTarget()` would have to load that from K8s.
                         // If that service is subsequently deleted, then
-                        // `compileForwardTarget()` would just return `undefined`.
+                        // `compileProxyTarget()` would just return `undefined`.
                         // We want to make sure if those two things happen
                         // back-to-back, and the second promise resolves first,
                         // that we end in a state where the service is deleted.
                     } else {
                         log.debug(`Updated ${source}`);
 
-                        const exisitng: CompiledForwardTarget[] =
-                            this._configsBySource[source] || [];
+                        const exisitng: CompiledProxyTarget[] = this._configsBySource[source] || [];
 
                         // If there are any services which used to be in this
                         // config which are now missing, delete the services.
@@ -271,8 +270,8 @@ function toSource(type: string, namespace: string, name: string) {
 /**
  * Extract configuration for a service from the service's annotations.
  */
-function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTarget[] {
-    const answer: RawForwardTarget[] = [];
+function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarget[] {
+    const answer: RawProxyTarget[] = [];
     const namespace = service.metadata?.namespace || 'default';
     const annotations = service.metadata?.annotations ?? {};
 
@@ -353,7 +352,7 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawForwardTar
 
 function configMapToTargets(configMap: k8s.V1ConfigMap, source: string) {
     const namespace = configMap.metadata?.namespace || 'default';
-    let rawTargets: RawForwardTarget[] = [];
+    let rawTargets: RawProxyTarget[] = [];
     if (configMap.data) {
         for (const file of Object.keys(configMap.data)) {
             try {
@@ -383,7 +382,7 @@ function configMapToTargets(configMap: k8s.V1ConfigMap, source: string) {
 
 function secretToTargets(secret: k8s.V1Secret, source: string) {
     const namespace = secret.metadata?.namespace || 'default';
-    let rawTargets: RawForwardTarget[] = [];
+    let rawTargets: RawProxyTarget[] = [];
     if (secret.data) {
         for (const file of Object.keys(secret.data)) {
             try {

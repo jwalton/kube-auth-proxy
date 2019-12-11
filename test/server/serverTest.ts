@@ -6,11 +6,11 @@ import pEvent from 'p-event';
 import { makeFetch } from 'supertest-fetch';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
 import { startServer } from '../../src/server';
-import { CompiledForwardTarget } from '../../src/Targets';
+import { CompiledProxyTarget } from '../../src/Targets';
 import { SanitizedKubeAuthProxyConfig } from '../../src/types';
 import { makeSessionCookieForUser } from '../fixtures/makeSessionCookie';
 import MockAuthModule from '../fixtures/MockAuthModule';
-import { mockForwardTargetManager } from '../fixtures/mockForwardTargetManager';
+import { mockProxyTargetManager } from '../fixtures/mockProxyTargetManager';
 import { makeTestServer } from '../fixtures/testServer';
 
 const SESSION_SECRET = 'woo';
@@ -34,7 +34,7 @@ describe('Server Tests', function() {
     let testServer: http.Server;
     let testPort: number;
     let server: http.Server | undefined;
-    let forwardTarget: CompiledForwardTarget;
+    let proxyTarget: CompiledProxyTarget;
 
     before(async function() {
         const app = express();
@@ -45,7 +45,7 @@ describe('Server Tests', function() {
 
         ({ server: testServer, port: testPort } = await makeTestServer(app));
 
-        forwardTarget = {
+        proxyTarget = {
             compiled: true,
             host: 'mock.test.com',
             key: 'mock',
@@ -67,7 +67,7 @@ describe('Server Tests', function() {
     });
 
     it('should require authentication', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -77,7 +77,7 @@ describe('Server Tests', function() {
     });
 
     it('should redirect to login screen', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -87,7 +87,7 @@ describe('Server Tests', function() {
     });
 
     it('should proxy a request for an authorized user', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -102,7 +102,7 @@ describe('Server Tests', function() {
     });
 
     it('should login a user', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -118,11 +118,11 @@ describe('Server Tests', function() {
 
     it('should proxy a request for an authenticated user, for a target with no conditions', async function() {
         const target = {
-            ...forwardTarget,
+            ...proxyTarget,
             conditions: [],
         };
 
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([target]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -137,11 +137,11 @@ describe('Server Tests', function() {
     });
 
     it('should deny a request for an unauthorized user', async function() {
-        const myForwardTarget = {
-            ...forwardTarget,
+        const myProxyTarget = {
+            ...proxyTarget,
             conditions: [{ allowedUsers: 'someone-else' } as any],
         };
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([myForwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([myProxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -156,7 +156,7 @@ describe('Server Tests', function() {
     });
 
     it('should return a 404 if the host header does not resolve to a target', async function() {
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([forwardTarget]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');
@@ -171,15 +171,15 @@ describe('Server Tests', function() {
     });
 
     it('should add a authorization header', async function() {
-        const target: CompiledForwardTarget = {
-            ...forwardTarget,
+        const target: CompiledProxyTarget = {
+            ...proxyTarget,
             conditions: [],
             headers: {
                 authorization: 'Bearer mr.token',
             },
         };
 
-        server = startServer(DEFAULT_CONFIG, mockForwardTargetManager([target]), [
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([target]), [
             new MockAuthModule(),
         ]);
         await pEvent(server, 'listening');

@@ -1,24 +1,24 @@
 import express from 'express';
 import { noTargetFound } from '../metrics';
-import { CompiledForwardTarget } from '../Targets';
+import { CompiledProxyTarget } from '../Targets';
 import * as log from '../utils/logger';
 
-export interface ForwardTargetFinder {
-    findTarget(host: string): CompiledForwardTarget | undefined;
+export interface ProxyTargetFinder {
+    findTarget(host: string): CompiledProxyTarget | undefined;
 }
 
 /**
- * Creates a proxy which forwards connections based on configuration in `forwardTargets`.
+ * Creates a proxy which forwards connections based on configuration in `proxyTargets`.
  *
  * Whenever a connection comes in, the request's host will be looked up in
- * `forwardTargets`.  If a match is found, the request will be forwarded.
+ * `proxyTargets`.  If a match is found, the request will be forwarded.
  */
-export function findTargetMiddleware(forwardTargets: ForwardTargetFinder): express.RequestHandler {
+export function findTargetMiddleware(proxyTargets: ProxyTargetFinder): express.RequestHandler {
     return (req, res, next) => {
         const host = req.headers.host;
-        const forwardTarget = forwardTargets.findTarget(host || '');
+        const proxyTarget = proxyTargets.findTarget(host || '');
 
-        if (!forwardTarget) {
+        if (!proxyTarget) {
             noTargetFound.inc({ type: 'http' });
             log.info(`Rejecting http connection for service ${host}.`);
 
@@ -27,7 +27,7 @@ export function findTargetMiddleware(forwardTargets: ForwardTargetFinder): expre
             return;
         }
 
-        req.target = forwardTarget;
+        req.target = proxyTarget;
         next();
     };
 }

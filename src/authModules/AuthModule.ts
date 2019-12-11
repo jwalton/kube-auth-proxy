@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import passport from 'passport';
 import { Condition, SanitizedKubeAuthProxyConfig } from '../types';
-import { CompiledForwardTarget } from '../Targets';
+import { CompiledProxyTarget } from '../Targets';
 
 export interface AuthModule {
     /**
@@ -53,7 +53,7 @@ export interface AuthModule {
     authorize?(
         user: Express.User,
         condition: Condition,
-        target: CompiledForwardTarget,
+        target: CompiledProxyTarget,
         req: http.IncomingMessage
     ): boolean;
 }

@@ -7,12 +7,12 @@ import { SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
 import { generateHttpMessage } from '../utils/utils';
 import { wsAuthorizationMiddleware } from './authorization';
-import { ForwardTargetFinder } from './findTarget';
+import { ProxyTargetFinder } from './findTarget';
 import { wsSessionMiddleware } from './session';
 
 export function makeWebsocketHandler(
     config: SanitizedKubeAuthProxyConfig,
-    forwardTargets: ForwardTargetFinder,
+    proxyTargets: ProxyTargetFinder,
     authModules: AuthModule[]
 ) {
     const session = wsSessionMiddleware(config);
@@ -38,7 +38,7 @@ export function makeWebsocketHandler(
                 return;
             }
 
-            const target = forwardTargets.findTarget(host);
+            const target = proxyTargets.findTarget(host);
             if (!target) {
                 metrics.noTargetFound.inc({ type: 'ws' });
                 log.info(`Rejecting websocket connection for service ${host}.`);

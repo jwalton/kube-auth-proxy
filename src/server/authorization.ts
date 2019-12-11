@@ -1,7 +1,7 @@
 import http from 'http';
 import { AuthModule } from '../authModules/AuthModule';
 import { notAuthorizedCount } from '../metrics';
-import { CompiledForwardTarget } from '../Targets';
+import { CompiledProxyTarget } from '../Targets';
 import { Condition, KubeAuthProxyUser } from '../types';
 import { intersectionNotEmpty } from '../utils/utils';
 
@@ -14,7 +14,7 @@ export function authorizationMiddleware(authModules: AuthModule[]) {
 
 export function wsAuthorizationMiddleware(authModules: AuthModule[]) {
     function authorizeTarget(req: http.IncomingMessage) {
-        const { user, target } = req as { user?: Express.User; target?: CompiledForwardTarget };
+        const { user, target } = req as { user?: Express.User; target?: CompiledProxyTarget };
         if (!user) {
             throw new Error("Attempted to authorize a user, but there's no user.");
         }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { CompiledForwardTarget } from '../Targets';
+import { CompiledProxyTarget } from '../Targets';
 import { KubeAuthProxyUser } from '../types';
 
 declare global {
@@ -11,6 +11,6 @@ declare global {
 
 declare module 'express-serve-static-core' {
     interface Request<P extends Params = ParamsDictionary, ResBody = any, ReqBody = any> {
-        target?: CompiledForwardTarget;
+        target?: CompiledProxyTarget;
     }
 }

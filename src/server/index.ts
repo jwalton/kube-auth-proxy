@@ -6,14 +6,14 @@ import { SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
 import authentication from './authentication';
 import { authorizationMiddleware } from './authorization';
-import { findTargetMiddleware, ForwardTargetFinder } from './findTarget';
+import { findTargetMiddleware, ProxyTargetFinder } from './findTarget';
 import proxy from './proxy';
 import { sessionMiddleware } from './session';
 import { makeWebsocketHandler } from './websocket';
 
 export function startServer(
     config: SanitizedKubeAuthProxyConfig,
-    forwardTargets: ForwardTargetFinder,
+    proxyTargets: ProxyTargetFinder,
     authModules: AuthModule[]
 ) {
     const app = express();
@@ -32,7 +32,7 @@ export function startServer(
     app.use(authentication(config, authModules));
 
     // This sets `req.target`.
-    app.use(findTargetMiddleware(forwardTargets));
+    app.use(findTargetMiddleware(proxyTargets));
     app.use(authorizationMiddleware(authModules));
     app.use(proxy());
 
@@ -55,7 +55,7 @@ export function startServer(
     const server = http.createServer(app);
 
     // Handle proxying websocket connections.
-    server.on('upgrade', makeWebsocketHandler(config, forwardTargets, authModules));
+    server.on('upgrade', makeWebsocketHandler(config, proxyTargets, authModules));
 
     server.listen(config.port);
 

@@ -15,8 +15,8 @@ export type ServiceSpecifier =
           targetUrl: string;
       };
 
-export type RawForwardTarget = ServiceSpecifier & {
-    /** A key which uniquely identifies the "source" of the ForwardTarget. */
+export type RawProxyTarget = ServiceSpecifier & {
+    /** A key which uniquely identifies the "source" of the ProxyTarget. */
     key: string;
     source: string;
     host: string;
@@ -32,14 +32,14 @@ export interface Headers {
     [header: string]: string | string[];
 }
 
-export interface CompiledForwardTarget {
+export interface CompiledProxyTarget {
     compiled: true;
     /**
-     * A key which uniquely identifies this ForwardTarget.
+     * A key which uniquely identifies this ProxyTarget.
      */
     key: string;
     /**
-     * A key which uniquely identifies the source of the ForwardTarget.
+     * A key which uniquely identifies the source of the ProxyTarget.
      * Note that multiple targets may have the same source if they came from the
      * same place (for example, many targets defined in a single
      * configmap).
@@ -69,11 +69,11 @@ function isSerivceNameAndNamespace(
     return 'service' in target && typeof target.service === 'string';
 }
 
-export async function compileForwardTarget(
+export async function compileProxyTarget(
     k8sApi: k8s.CoreV1Api | undefined,
-    target: RawForwardTarget,
+    target: RawProxyTarget,
     defaultConditions: Condition[]
-): Promise<CompiledForwardTarget> {
+): Promise<CompiledProxyTarget> {
     let targetUrl: string;
 
     if ('targetUrl' in target && typeof target.targetUrl === 'string') {
@@ -117,7 +117,7 @@ export async function compileForwardTarget(
         headers = addHeader(headers, 'authorization', `Basic ${basicAuth}`);
     }
 
-    const answer: CompiledForwardTarget = {
+    const answer: CompiledProxyTarget = {
         compiled: true,
         key: target.key,
         source: target.source,
@@ -135,7 +135,7 @@ export function parseTargetsFromFile(
     namespace: string | undefined,
     source: string,
     filename: string,
-    targets: RawForwardTarget[] | undefined
+    targets: RawProxyTarget[] | undefined
 ) {
     if (!targets || !Array.isArray(targets)) {
         log.warn(`${source}/${filename}: has no targets.`);

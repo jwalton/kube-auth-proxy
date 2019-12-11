@@ -1,5 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
-import { RawForwardTarget } from './Targets';
+import { RawProxyTarget } from './Targets';
 import { LogLevel } from './utils/logger';
 
 export interface KubeAuthProxyUser {
@@ -68,7 +68,7 @@ export interface RawKubeAuthProxyConfig {
     };
 
     defaultConditions?: RawCondition;
-    defaultTargets?: RawForwardTarget[];
+    defaultTargets?: RawProxyTarget[];
 
     logLevel?: LogLevel;
 
@@ -82,7 +82,7 @@ export type SanitizedKubeAuthProxyConfig = RawKubeAuthProxyConfig & {
     sessionSecret: string;
     secureCookies: boolean;
     defaultConditions: Condition[];
-    defaultTargets: RawForwardTarget[];
+    defaultTargets: RawProxyTarget[];
 };
 
 export interface RawCondition {

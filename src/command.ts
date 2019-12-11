@@ -3,10 +3,10 @@ import _ from 'lodash';
 import { parseCommandLineArgs } from './args';
 import authModules from './authModules';
 import { DEFAULT_METRICS_PORT, readConfig, validateConfig } from './config';
-import ForwardTargetManager from './ForwardTargetManager';
+import TargetManager from './TargetManager';
 import { startMetricsServer } from './metrics';
 import { startServer as startProxyServer } from './server/index';
-import { CompiledForwardTarget, compileForwardTarget, parseTargetsFromFile } from './Targets';
+import { CompiledProxyTarget, compileProxyTarget, parseTargetsFromFile } from './Targets';
 import * as log from './utils/logger';
 
 async function start() {
@@ -41,15 +41,15 @@ async function start() {
         'static-config',
         config.defaultTargets
     );
-    const defaultTargets: CompiledForwardTarget[] = [];
+    const defaultTargets: CompiledProxyTarget[] = [];
     for (const defaultTarget of rawDefaultTargets) {
         defaultTargets.push(
-            await compileForwardTarget(k8sApi, defaultTarget, config.defaultConditions)
+            await compileProxyTarget(k8sApi, defaultTarget, config.defaultConditions)
         );
     }
 
     // Watch Kubernetes for services to proxy to.
-    const forwardTargets = new ForwardTargetManager(defaultTargets, {
+    const proxyTargets = new TargetManager(defaultTargets, {
         kubeConfig,
         domain: config.domain,
         namespaces: config.namespaces,
@@ -57,7 +57,7 @@ async function start() {
         secretSelector: config.secretSelector,
     });
 
-    startProxyServer(config, forwardTargets, authModules);
+    startProxyServer(config, proxyTargets, authModules);
     startMetricsServer(config.metricsPort || DEFAULT_METRICS_PORT);
 }
 

@@ -4,34 +4,34 @@ import { forwardCount } from '../metrics';
 import * as log from '../utils/logger';
 
 /**
- * Creates a proxy which forwards connections based on configuration in `forwardTargets`.
+ * Creates a proxy which forwards connections based on configuration in `proxyTargets`.
  *
  * Whenever a connection comes in, the request's host will be looked up in
- * `forwardTargets`.  If a match is found, the request will be forwarded.
+ * `proxyTargets`.  If a match is found, the request will be forwarded.
  */
 export default function proxyMiddleware(): express.RequestHandler {
     const proxy = httpProxy.createProxyServer({});
 
     return (req, res, next) => {
-        const forwardTarget = req.target;
+        const proxyTarget = req.target;
 
         /* istanbul ignore next */
-        if (!forwardTarget) {
-            next(new Error('No forwardTarget.'));
+        if (!proxyTarget) {
+            next(new Error('No proxyTarget.'));
             return;
         }
 
-        log.debug(`Forwarding request to ${forwardTarget.targetUrl}`);
+        log.debug(`Forwarding request to ${proxyTarget.targetUrl}`);
         forwardCount.inc({ type: 'http' });
 
-        if (forwardTarget.headers) {
+        if (proxyTarget.headers) {
             req.headers = {
                 ...req.headers,
-                ...forwardTarget.headers,
+                ...proxyTarget.headers,
             };
         }
 
-        proxy.web(req, res, { target: forwardTarget.targetUrl }, err => {
+        proxy.web(req, res, { target: proxyTarget.targetUrl }, err => {
             if (err) {
                 next(err);
             }
