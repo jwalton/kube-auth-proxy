@@ -9,5 +9,5 @@ target:
   to:
     service: rabbitmq
     targetPort: 15672
-  username: guest
-  password: guest
+  basicAuthUsername: guest
+  basicAuthPassword: guest
