@@ -92,9 +92,15 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
         source: 'static-config',
         key: `config-${index}`,
     }));
-    for (const target of config.defaultTargets || []) {
-        validateProxyTarget(target);
-    }
+    (config.defaultTargets || []).forEach((target, index) => {
+        try {
+            validateProxyTarget(target);
+        } catch (err) {
+            throw new Error(
+                `Error validating static config defaultTargets[${index}]: ${err.message}.`
+            );
+        }
+    });
 
     return config as SanitizedKubeAuthProxyConfig;
 }

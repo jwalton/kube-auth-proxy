@@ -43,11 +43,10 @@ export default class TargetManager implements ProxyTargetFinder {
             this._configWatch = new ConfigWatcher(options.kubeConfig, options);
 
             this._configWatch.on('updated', target => {
-                if (!this._targetByKey[target.key]) {
-                    log.info(
-                        `Adding target ${target.host} => ${target.targetUrl} (from ${target.source})`
-                    );
-                }
+                const verb = this._targetByKey[target.key] ? 'Updating' : 'Adding';
+                log.info(
+                    `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})`
+                );
                 this._targetByKey[target.key] = target;
                 this._rebuildConfigsByHost();
             });
