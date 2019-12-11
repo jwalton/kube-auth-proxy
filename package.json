@@ -16,6 +16,7 @@
         "test:precommit": "npm run build && lint-staged",
         "build": "tsc",
         "build:minikube": "eval $(minikube docker-env) && docker build --target release --tag jwalton/kube-auth-proxy . && eval $(minikube docker-env -u)",
+        "build:docker": "docker build --target release --tag jwalton/kube-auth-proxy .",
         "clean": "rm -rf dist types coverage",
         "test:unittest": "tsc -p test && nyc mocha 'test/**/*.@(ts|tsx|js|jsx)'",
         "lint": "npm run lint:source && npm run lint:tests",

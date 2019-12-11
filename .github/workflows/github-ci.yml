@@ -1,0 +1,51 @@
+name: GitHub CI
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  IMAGE_NAME: jwalton/kube-auth-proxy
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12'
+      - name: npm install
+        run: npm ci
+      - run: npm run test
+  push:
+    name: Push to Docker Hub
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build Docker Image
+        run: docker build --target release --tag $IMAGE_NAME .
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login --username jwalton
+      - name: Push image
+        run: |
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo IMAGE_NAME=$IMAGE_NAME
+          echo VERSION=$VERSION
+          docker tag image $IMAGE_NAME:$VERSION
+          docker push $IMAGE_NAME:$VERSION
