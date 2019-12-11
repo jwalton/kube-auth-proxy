@@ -1,7 +1,7 @@
 # kube-auth-proxy
 
 [![NPM version](https://badge.fury.io/js/kube-auth-proxy.svg)](https://npmjs.org/package/kube-auth-proxy)
-![Build Status](https://github.com/jwalton/kube-auth-proxy.svg)
+![Build Status](https://github.com/jwalton/kube-auth-proxy/workflows/GitHub%20CI/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/jwalton/kube-auth-proxy/badge.svg)](https://coveralls.io/r/jwalton/kube-auth-proxy)
 
 Securely expose your private Kubernetes services.
