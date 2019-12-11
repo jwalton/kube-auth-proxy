@@ -96,11 +96,13 @@ class ConfigWatcher extends EventEmitter {
             type: 'proxyTarget',
             resourceUrl: '/apis/kube-auth-proxy.thedreaming.org/v1beta1/proxytargets',
             labelSelector: options.proxyTargetSelector,
-            getRawTargets(proxyTarget) {
+            getRawTargets(proxyTarget, source) {
                 if (isServiceNameAndNamespace(proxyTarget.target.to)) {
                     proxyTarget.target.to.namespace =
                         proxyTarget.target.to.namespace || proxyTarget.metadata?.namespace;
                 }
+                proxyTarget.target.source = source;
+                proxyTarget.target.key = source;
                 return [proxyTarget.target];
             },
             onErr(err: Error) {
