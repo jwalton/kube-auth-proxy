@@ -310,3 +310,9 @@ function addHeader(headers: Headers | undefined, header: string, value: string) 
     }
     return newHeaders;
 }
+
+export function getFqdnForTarget(domain: string, target: CompiledProxyTarget) {
+    return target.host.includes(':') || target.host.includes('.')
+        ? target.host
+        : `${target.host}.${domain}`;
+}

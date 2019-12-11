@@ -2,8 +2,9 @@ import * as k8s from '@kubernetes/client-node';
 import prometheus from 'prom-client';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
 import { ProxyTargetFinder } from './server/findTarget';
-import { CompiledProxyTarget } from './targets';
+import { CompiledProxyTarget, getFqdnForTarget } from './targets';
 import * as log from './utils/logger';
+import _ from 'lodash';
 
 export const servicesProxied = new prometheus.Gauge({
     name: 'kube_auth_proxy_forwarded_targets',
@@ -43,12 +44,18 @@ export default class TargetManager implements ProxyTargetFinder {
             this._configWatch = new ConfigWatcher(options.kubeConfig, options);
 
             this._configWatch.on('updated', target => {
-                const verb = this._targetByKey[target.key] ? 'Updating' : 'Adding';
-                log.info(
-                    `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})`
-                );
-                this._targetByKey[target.key] = target;
-                this._rebuildConfigsByHost();
+                const unchanged =
+                    this._targetByKey[target.key] &&
+                    _.isEqual(this._targetByKey[target.key], target);
+
+                if (!unchanged) {
+                    const verb = this._targetByKey[target.key] ? 'Updating' : 'Adding';
+                    log.info(
+                        `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})`
+                    );
+                    this._targetByKey[target.key] = target;
+                    this._rebuildConfigsByHost();
+                }
             });
             this._configWatch.on('deleted', target => {
                 if (this._targetByKey[target.key]) {
@@ -96,21 +103,17 @@ export default class TargetManager implements ProxyTargetFinder {
         let conflicts = 0;
 
         for (const key of Object.keys(this._targetByKey)) {
-            const config = this._targetByKey[key];
-
-            const host =
-                config.host.includes(':') || config.host.includes('.')
-                    ? config.host
-                    : `${config.host}.${this._domain}`;
+            const target = this._targetByKey[key];
+            const host = getFqdnForTarget(this._domain, target);
 
             if (this._targetsByHost[host]) {
                 conflicts++;
                 log.warn(
-                    `Configuration from ${this._targetsByHost[host].key} conflicts with ${config.key}`
+                    `Configuration from ${this._targetsByHost[host].key} conflicts with ${target.key}`
                 );
             } else {
                 count++;
-                this._targetsByHost[host] = config;
+                this._targetsByHost[host] = target;
             }
         }
 
