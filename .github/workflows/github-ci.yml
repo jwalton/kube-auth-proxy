@@ -36,7 +36,7 @@ jobs:
       - name: Build Docker Image
         run: docker build --target release --tag $IMAGE_NAME .
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login --username jwalton
+        run: docker login -u jwalton -p "${{ secrets.DOCKER_HUB_TOKEN }}"
       - name: Push image
         run: |
           # Strip git ref prefix from version
