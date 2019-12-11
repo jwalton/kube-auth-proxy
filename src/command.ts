@@ -3,9 +3,9 @@ import _ from 'lodash';
 import { parseCommandLineArgs } from './args';
 import authModules from './authModules';
 import { DEFAULT_METRICS_PORT, readConfig, validateConfig } from './config';
-import TargetManager from './TargetManager';
 import { startMetricsServer } from './metrics';
 import { startServer as startProxyServer } from './server/index';
+import TargetManager from './TargetManager';
 import { CompiledProxyTarget, compileProxyTarget, parseTargetsFromFile } from './targets';
 import * as log from './utils/logger';
 
@@ -49,7 +49,7 @@ async function start() {
     }
 
     // Watch Kubernetes for services to proxy to.
-    const proxyTargets = new TargetManager(defaultTargets, {
+    const proxyTargets = new TargetManager(defaultTargets, authModules, {
         kubeConfig,
         domain: config.domain,
         namespaces: config.namespaces,

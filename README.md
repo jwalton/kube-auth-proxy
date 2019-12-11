@@ -136,6 +136,11 @@ kube-auth-proxy will update it's internal configuration and start forwarding
 traffic to your internal service. Only Github authenticated users will
 be able to connect.
 
+### See a list of services
+
+You can visit `https://auth.internal.MY-DOMAIN.COM/kube-auth-proxy/list` to see
+a list of services you are authorized to view.
+
 ## Service Annotations
 
 - `kube-auth-proxy/host` - The hostname to assign to the service. This can
@@ -268,5 +273,9 @@ $ kubectl --namespace kube-system port-forward svc/kube-auth-proxy 5050:5050
 ```
 
 And then visit [http://localhost:5050](http://localhost:5050).
+
+## Run locally in the shell
+
+- Create a file called "./config/kube-auth-proxy.yaml".
 
 Copyright 2019 Jason Walton

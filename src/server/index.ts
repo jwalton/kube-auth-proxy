@@ -3,6 +3,7 @@ import http from 'http';
 import { AuthModule } from '../authModules/AuthModule';
 import { backendErrorCount } from '../metrics';
 import { SanitizedKubeAuthProxyConfig } from '../types';
+import { targetList } from '../ui/targetList';
 import * as log from '../utils/logger';
 import authentication from './authentication';
 import { authorizationMiddleware } from './authorization';
@@ -31,8 +32,22 @@ export function startServer(
     // and attackers can't probe what domains do or do not exist.
     app.use(authentication(config, authModules));
 
+    app.get('/kube-auth-proxy/list', (req, res, next) => {
+        if (!req.user) {
+            return next();
+        }
+        const targets = proxyTargets.findTargetsForUser(req.user);
+        res.send(
+            targetList({
+                user: req.user,
+                domain: config.domain,
+                targets,
+            })
+        );
+    });
+
     // This sets `req.target`.
-    app.use(findTargetMiddleware(proxyTargets));
+    app.use(findTargetMiddleware(proxyTargets, config.domain));
     app.use(authorizationMiddleware(authModules));
     app.use(proxy());
 
@@ -45,9 +60,12 @@ export function startServer(
                 backendErrorCount.inc({ type: 'http' });
                 if ((err as any).code !== 'ECONNREFUSED') {
                     log.error(err, 'Error forwarding connection');
+                    res.statusCode = 502;
+                    res.end('Bad Gateway');
+                } else {
+                    res.statusCode = 500;
+                    res.end('Internal server error');
                 }
-                res.statusCode = 500;
-                res.end('Internal server error');
             }
         }
     );

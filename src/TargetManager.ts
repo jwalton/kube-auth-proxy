@@ -5,6 +5,9 @@ import { ProxyTargetFinder } from './server/findTarget';
 import { CompiledProxyTarget, getFqdnForTarget } from './targets';
 import * as log from './utils/logger';
 import _ from 'lodash';
+import { KubeAuthProxyUser } from './types';
+import { authorizeUserForTarget } from './targets/authorization';
+import { AuthModule } from './authModules/AuthModule';
 
 export const servicesProxied = new prometheus.Gauge({
     name: 'kube_auth_proxy_forwarded_targets',
@@ -24,6 +27,7 @@ export const serviceConflicts = new prometheus.Gauge({
  */
 export default class TargetManager implements ProxyTargetFinder {
     private _configWatch?: ConfigWatcher;
+    private _authModules: AuthModule[];
     private _domain: string;
     private _targetByKey: { [key: string]: CompiledProxyTarget } = {};
     // This is generated from `_configsByKey` by calling `_rebuildConfigsByHost()`.
@@ -31,6 +35,7 @@ export default class TargetManager implements ProxyTargetFinder {
 
     constructor(
         defaultTargets: CompiledProxyTarget[],
+        authModules: AuthModule[],
         options: {
             domain: string;
             kubeConfig?: k8s.KubeConfig;
@@ -39,6 +44,7 @@ export default class TargetManager implements ProxyTargetFinder {
         }
     ) {
         this._domain = options.domain;
+        this._authModules = authModules;
 
         if (options.kubeConfig) {
             this._configWatch = new ConfigWatcher(options.kubeConfig, options);
@@ -127,5 +133,21 @@ export default class TargetManager implements ProxyTargetFinder {
      */
     findTarget(host: string) {
         return this._targetsByHost[host];
+    }
+
+    /**
+     * Returns a list of all targets the user is authorized to access.
+     */
+    findTargetsForUser(user: KubeAuthProxyUser) {
+        const answer: CompiledProxyTarget[] = [];
+
+        for (const host of Object.keys(this._targetsByHost)) {
+            const target = this._targetsByHost[host];
+            if (authorizeUserForTarget(this._authModules, user, target)) {
+                answer.push(target);
+            }
+        }
+
+        return answer;
     }
 }

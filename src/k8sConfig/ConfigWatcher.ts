@@ -75,11 +75,6 @@ class ConfigWatcher extends EventEmitter {
         this._namespaces = options.namespaces;
 
         const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
-        // this._serviceWatcher = this._watchServices(
-        //     kubeConfig,
-        //     k8sApi,
-        //     options.defaultConditions || []
-        // );
         this._serviceWatcher = this._watchObjects({
             kubeConfig,
             k8sApi,

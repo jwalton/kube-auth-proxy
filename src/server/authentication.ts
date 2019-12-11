@@ -3,6 +3,7 @@ import { Passport } from 'passport';
 import { AuthModule } from '../authModules/AuthModule';
 import { notAuthenticatedCount } from '../metrics';
 import { SanitizedKubeAuthProxyConfig } from '../types';
+import { loginScreen } from '../ui/loginScreen';
 import * as log from '../utils/logger';
 import './express-types';
 
@@ -52,7 +53,7 @@ export default function authentication(
 
         //; TODO: Could probably come up with a prettier login screen.  :P
         res.set('content-type', 'text/html');
-        res.end(`<html><body>${loginButtons}</body></html>`);
+        res.end(loginScreen({ loginButtons }));
     });
 
     router.use((req, res, next) => {

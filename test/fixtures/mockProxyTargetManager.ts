@@ -6,5 +6,9 @@ export function mockProxyTargetManager(targets: CompiledProxyTarget[]): ProxyTar
         findTarget(host: string) {
             return targets.find(target => target.host === host);
         },
+
+        findTargetsForUser() {
+            return targets;
+        },
     };
 }

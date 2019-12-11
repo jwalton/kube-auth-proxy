@@ -1,10 +1,13 @@
 import express from 'express';
 import { noTargetFound } from '../metrics';
 import { CompiledProxyTarget } from '../targets';
+import { KubeAuthProxyUser } from '../types';
 import * as log from '../utils/logger';
+import { targetList } from '../ui/targetList';
 
 export interface ProxyTargetFinder {
     findTarget(host: string): CompiledProxyTarget | undefined;
+    findTargetsForUser(user: KubeAuthProxyUser): CompiledProxyTarget[];
 }
 
 /**
@@ -13,7 +16,10 @@ export interface ProxyTargetFinder {
  * Whenever a connection comes in, the request's host will be looked up in
  * `proxyTargets`.  If a match is found, the request will be forwarded.
  */
-export function findTargetMiddleware(proxyTargets: ProxyTargetFinder): express.RequestHandler {
+export function findTargetMiddleware(
+    proxyTargets: ProxyTargetFinder,
+    domain: string
+): express.RequestHandler {
     return (req, res, next) => {
         const host = req.headers.host;
         const proxyTarget = proxyTargets.findTarget(host || '');
@@ -22,8 +28,21 @@ export function findTargetMiddleware(proxyTargets: ProxyTargetFinder): express.R
             noTargetFound.inc({ type: 'http' });
             log.info(`Rejecting http connection for service ${host}.`);
 
+            let response: string;
+            if (!req.user) {
+                // This should never happen
+                response = 'Not found';
+            } else {
+                const targets = proxyTargets.findTargetsForUser(req.user);
+                response = targetList({
+                    user: req.user,
+                    domain,
+                    targets,
+                });
+            }
+
             res.statusCode = 404;
-            res.end('Not found');
+            res.send(response);
             return;
         }
 
