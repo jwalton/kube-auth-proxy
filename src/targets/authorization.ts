@@ -21,6 +21,14 @@ export function authorizeUserForTarget(
     } else {
         authorized = target.conditions.some(
             condition =>
+                // FIXME: Either need to run this on ALL auth modules (even the disabled ones)
+                // or we need to make sure that conditions for disabled modules are not
+                // included in compiled targets.  Otherwise if we have a condition
+                // that says "You need this email domain and this github org",
+                // we would just silently ignore the "this github org" part, and
+                // let someone in when we shouldn't.  This isn't an issue right now,
+                // but only because we only support github and no other authentication
+                // schemes.
                 authModules.every(module => {
                     let rejected = false;
                     if (module.authorize) {
