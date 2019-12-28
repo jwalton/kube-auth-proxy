@@ -1,12 +1,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { promises as fs } from 'fs';
-import sinon from 'sinon';
 import {
     DEFAULT_COOKIE_NAME,
     DEFAULT_METRICS_PORT,
     DEFAULT_PORT,
-    readConfig,
     validateConfig,
 } from '../src/config';
 import { SanitizedKubeAuthProxyConfig } from '../src/types';
@@ -14,23 +11,17 @@ import { SanitizedKubeAuthProxyConfig } from '../src/types';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-const MINIMAL_CONFIG = `
-domain: mydomain.com
-auth:
-    github:
-        clientID: fake-client-id
-        clientSecret: fake-client-secret
-`;
-
 describe('config parser', function() {
-    afterEach(function() {
-        sinon.restore();
-    });
-
     it('should fill in default values', async function() {
-        sinon.stub(fs, 'readFile').resolves(MINIMAL_CONFIG);
-        const rawConfig = await readConfig();
-        const config = validateConfig(rawConfig);
+        const config = validateConfig({
+            domain: 'mydomain.com',
+            auth: {
+                github: {
+                    clientID: 'fake-client-id',
+                    clientSecret: 'fake-client-secret',
+                },
+            },
+        });
 
         const expectedConfig: SanitizedKubeAuthProxyConfig = {
             domain: 'mydomain.com',
@@ -56,8 +47,6 @@ describe('config parser', function() {
     });
 
     it('should error for an invalid config', async function() {
-        sinon.stub(fs, 'readFile').resolves('');
-        const config = await readConfig();
-        expect(() => validateConfig(config)).to.throw('domain required in configuration.');
+        expect(() => validateConfig({} as any)).to.throw('domain required in configuration.');
     });
 });
