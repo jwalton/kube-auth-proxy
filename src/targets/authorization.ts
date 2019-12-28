@@ -1,5 +1,5 @@
 import { CompiledProxyTarget } from '.';
-import { AuthModule } from '../authModules/AuthModule';
+import { GithubUser } from '../authModules/github';
 import { Condition, KubeAuthProxyUser } from '../types';
 import { intersectionNotEmpty } from '../utils/utils';
 
@@ -10,38 +10,23 @@ import { intersectionNotEmpty } from '../utils/utils';
  * @param user - The user to check.
  * @param target - the target to check.
  */
-export function authorizeUserForTarget(
-    authModules: AuthModule[],
-    user: KubeAuthProxyUser,
-    target: CompiledProxyTarget
-) {
+export function authorizeUserForTarget(user: KubeAuthProxyUser, target: CompiledProxyTarget) {
     let authorized = false;
     if (target.conditions.length === 0) {
         authorized = true;
     } else {
         authorized = target.conditions.some(
-            condition =>
-                // FIXME: Either need to run this on ALL auth modules (even the disabled ones)
-                // or we need to make sure that conditions for disabled modules are not
-                // included in compiled targets.  Otherwise if we have a condition
-                // that says "You need this email domain and this github org",
-                // we would just silently ignore the "this github org" part, and
-                // let someone in when we shouldn't.  This isn't an issue right now,
-                // but only because we only support github and no other authentication
-                // schemes.
-                authModules.every(module => {
-                    let rejected = false;
-                    if (module.authorize) {
-                        rejected = !module.authorize(user, condition, target);
-                    }
-                    return !rejected;
-                }) && authorizeEmails(user, condition)
+            condition => authorizeEmails(user, condition) && authorizeGithub(user, condition)
         );
     }
 
     return authorized;
 }
 
+/**
+ * Returns true if the given user satisfies the `emailDomains` and `allowedEmails`
+ * parts of the given condition.
+ */
 function authorizeEmails(user: KubeAuthProxyUser, condition: Condition) {
     const matchAllowedEmails =
         !condition.allowedEmails || intersectionNotEmpty(condition.allowedEmails, user.emails);
@@ -51,4 +36,29 @@ function authorizeEmails(user: KubeAuthProxyUser, condition: Condition) {
         user.emails.some(email => condition.emailDomains?.some(domain => email.endsWith(domain)));
 
     return matchAllowedEmails && matchEmailDomains;
+}
+
+/**
+ * Returns true if the given user satisfies the github parts of the given condition.
+ */
+function authorizeGithub(user: Express.User, condition: Condition): boolean {
+    const githubUser = user.type === 'github' ? (user as GithubUser) : false;
+
+    let answer = true;
+    const { githubAllowedUsers, githubAllowedOrganizations, githubAllowedTeams } = condition;
+
+    if (githubAllowedUsers) {
+        answer = answer && githubUser && githubAllowedUsers.includes(user.username);
+    }
+    if (githubAllowedTeams) {
+        answer = answer && githubUser && intersectionNotEmpty(githubAllowedTeams, githubUser.teams);
+    }
+    if (githubAllowedOrganizations) {
+        answer =
+            answer &&
+            githubUser &&
+            intersectionNotEmpty(githubAllowedOrganizations, githubUser.orgs);
+    }
+
+    return answer;
 }

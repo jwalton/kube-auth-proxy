@@ -1,13 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
+import _ from 'lodash';
 import prometheus from 'prom-client';
 import ConfigWatcher from './k8sConfig/ConfigWatcher';
 import { ProxyTargetFinder } from './server/findTarget';
-import { CompiledProxyTarget, getFqdnForTarget, conditionToString } from './targets';
-import * as log from './utils/logger';
-import _ from 'lodash';
-import { KubeAuthProxyUser, Condition } from './types';
+import { CompiledProxyTarget, conditionToString, getFqdnForTarget } from './targets';
 import { authorizeUserForTarget } from './targets/authorization';
-import { AuthModule } from './authModules/AuthModule';
+import { Condition, KubeAuthProxyUser } from './types';
+import * as log from './utils/logger';
 
 export const servicesProxied = new prometheus.Gauge({
     name: 'kube_auth_proxy_forwarded_targets',
@@ -27,7 +26,6 @@ export const serviceConflicts = new prometheus.Gauge({
  */
 export default class TargetManager implements ProxyTargetFinder {
     private _configWatch?: ConfigWatcher;
-    private _authModules: AuthModule[];
     private _domain: string;
     private _targetByKey: { [key: string]: CompiledProxyTarget } = {};
     // This is generated from `_configsByKey` by calling `_rebuildConfigsByHost()`.
@@ -36,7 +34,6 @@ export default class TargetManager implements ProxyTargetFinder {
     constructor(
         defaultTargets: CompiledProxyTarget[],
         defaultConditions: Condition[],
-        authModules: AuthModule[],
         options: {
             domain: string;
             kubeConfig?: k8s.KubeConfig;
@@ -45,7 +42,6 @@ export default class TargetManager implements ProxyTargetFinder {
         }
     ) {
         this._domain = options.domain;
-        this._authModules = authModules;
 
         if (options.kubeConfig) {
             this._configWatch = new ConfigWatcher(options.kubeConfig, defaultConditions, options);
@@ -145,7 +141,7 @@ export default class TargetManager implements ProxyTargetFinder {
 
         for (const host of Object.keys(this._targetsByHost)) {
             const target = this._targetsByHost[host];
-            if (authorizeUserForTarget(this._authModules, user, target)) {
+            if (authorizeUserForTarget(user, target)) {
                 answer.push(target);
             }
         }

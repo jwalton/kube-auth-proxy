@@ -3,9 +3,8 @@ import express from 'express';
 import * as passportLib from 'passport';
 import GitHubStrategy from 'passport-github';
 import '../server/express-types';
-import { Condition, KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../types';
+import { KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
-import { intersectionNotEmpty } from '../utils/utils';
 
 // Refresh the user's teams and orgs every 5 minutes.
 const USER_REFRESH_INTERVAL = 1000 * 60 * 5;
@@ -130,31 +129,6 @@ export function authenticationMiddleware(
     );
 
     return router;
-}
-
-/**
- * Returns true if the given user meets the given condition.
- */
-export function authorize(user: Express.User, condition: Condition): boolean {
-    const githubUser = user.type === 'github' ? (user as GithubUser) : false;
-
-    let answer = true;
-    const { githubAllowedUsers, githubAllowedOrganizations, githubAllowedTeams } = condition;
-
-    if (githubAllowedUsers) {
-        answer = answer && githubUser && githubAllowedUsers.includes(user.username);
-    }
-    if (githubAllowedTeams) {
-        answer = answer && githubUser && intersectionNotEmpty(githubAllowedTeams, githubUser.teams);
-    }
-    if (githubAllowedOrganizations) {
-        answer =
-            answer &&
-            githubUser &&
-            intersectionNotEmpty(githubAllowedOrganizations, githubUser.orgs);
-    }
-
-    return answer;
 }
 
 /**

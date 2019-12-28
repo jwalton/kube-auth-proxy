@@ -1,7 +1,6 @@
 import express from 'express';
 import passport from 'passport';
-import { Condition, SanitizedKubeAuthProxyConfig } from '../types';
-import { CompiledProxyTarget } from '../targets';
+import { SanitizedKubeAuthProxyConfig } from '../types';
 
 export interface AuthModule {
     /**
@@ -37,17 +36,4 @@ export interface AuthModule {
         config: SanitizedKubeAuthProxyConfig,
         passport: passport.Authenticator
     ): express.RequestHandler;
-
-    /**
-     * Returns true if the currently authenticated meets the conditions in
-     * `Condition`.  This will be called for each AuthModule, for each conditon.
-     * All AuthModules must return true for a condition to pass.
-     *
-     * Note that an AuthModule only needs to implement this for logic specific
-     * to that AuthModule.  If you're doing straight up OAuth authentication
-     * and returning a user with an "emails" and "username" field and nothing
-     * else, then the default email and username related conditions will all
-     * be checked for you already.
-     */
-    authorize?(user: Express.User, condition: Condition, target: CompiledProxyTarget): boolean;
 }

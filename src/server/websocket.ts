@@ -1,7 +1,6 @@
 import http from 'http';
 import httpProxy from 'http-proxy';
 import net from 'net';
-import { AuthModule } from '../authModules/AuthModule';
 import * as metrics from '../metrics';
 import { SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
@@ -12,11 +11,10 @@ import { wsSessionMiddleware } from './session';
 
 export function makeWebsocketHandler(
     config: SanitizedKubeAuthProxyConfig,
-    proxyTargets: ProxyTargetFinder,
-    authModules: AuthModule[]
+    proxyTargets: ProxyTargetFinder
 ) {
     const session = wsSessionMiddleware(config);
-    const authorization = wsAuthorizationMiddleware(authModules);
+    const authorization = wsAuthorizationMiddleware();
     const proxy = httpProxy.createProxyServer({});
 
     return (req: http.IncomingMessage, socket: net.Socket, head: any) => {

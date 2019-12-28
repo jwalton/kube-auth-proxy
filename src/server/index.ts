@@ -48,7 +48,7 @@ export function startServer(
 
     // This sets `req.target`.
     app.use(findTargetMiddleware(proxyTargets, config.domain));
-    app.use(authorizationMiddleware(authModules));
+    app.use(authorizationMiddleware());
     app.use(proxy());
 
     app.use(
@@ -78,7 +78,7 @@ export function startServer(
     const server = http.createServer(app);
 
     // Handle proxying websocket connections.
-    server.on('upgrade', makeWebsocketHandler(config, proxyTargets, authModules));
+    server.on('upgrade', makeWebsocketHandler(config, proxyTargets));
 
     server.listen(config.port);
 

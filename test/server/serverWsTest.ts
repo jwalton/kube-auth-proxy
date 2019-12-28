@@ -7,7 +7,7 @@ import WebSocket from 'ws';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
 import { startServer } from '../../src/server';
 import { CompiledProxyTarget } from '../../src/targets';
-import { SanitizedKubeAuthProxyConfig } from '../../src/types';
+import { KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../../src/types';
 import { makeSessionCookieForUser } from '../fixtures/makeSessionCookie';
 import MockAuthModule from '../fixtures/MockAuthModule';
 import { mockProxyTargetManager } from '../fixtures/mockProxyTargetManager';
@@ -25,9 +25,10 @@ const DEFAULT_CONFIG: SanitizedKubeAuthProxyConfig = {
     defaultTargets: [],
 };
 
-const USER_JWALTON = {
+const USER_JWALTON: KubeAuthProxyUser = {
     type: 'mock-auth',
     username: 'jwalton',
+    emails: ['jwalton@service.com'],
 };
 
 describe('Websocket Server Tests', function() {
@@ -52,7 +53,7 @@ describe('Websocket Server Tests', function() {
             wsTargetUrl: `ws://localhost:${testPort}`,
             /** Will forward traffic to this endpoint if the "host" header starts with this string or is this string. */
             host: 'mock.test.com',
-            conditions: [{ allowedUsers: [USER_JWALTON.username] } as any],
+            conditions: [{ allowedEmails: [USER_JWALTON.emails[0]] }],
             validateCertificate: true,
         };
 
@@ -147,7 +148,7 @@ describe('Websocket Server Tests', function() {
     it('should deny a ws request for an unauthorized user', async function() {
         const myProxyTarget = {
             ...proxyTarget,
-            conditions: [{ allowedUsers: 'someone-else' } as any],
+            conditions: [{ allowedEmails: ['someone-else@foo.com'] }],
         };
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([myProxyTarget]), [
             new MockAuthModule(),

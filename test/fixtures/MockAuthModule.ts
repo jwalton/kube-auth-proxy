@@ -1,6 +1,6 @@
 import express from 'express';
 import { AuthModule } from '../../src/authModules/AuthModule';
-import { Condition, SanitizedKubeAuthProxyConfig } from '../../src/types';
+import { SanitizedKubeAuthProxyConfig } from '../../src/types';
 
 export default class MockAuthModule implements AuthModule {
     name = 'mock-auth';
@@ -25,13 +25,10 @@ export default class MockAuthModule implements AuthModule {
         return router;
     }
 
-    authorize(user: any, condition: Condition) {
-        return (condition as any).allowedUsers.includes(user.username);
-    }
-
     getLoginButton() {
         return '<a href="">Login with Mock Provider!</a>';
     }
+
     isEnabled() {
         return true;
     }
