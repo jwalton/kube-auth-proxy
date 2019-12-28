@@ -74,17 +74,7 @@ describe('Server Tests', function() {
         await pEvent(server, 'listening');
 
         const fetch = makeFetch(server);
-        await fetch('/hello', { redirect: 'manual' }).expect(302, /\/kube-auth-proxy\/login/);
-    });
-
-    it('should redirect to login screen', async function() {
-        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
-            new MockAuthModule(),
-        ]);
-        await pEvent(server, 'listening');
-
-        const fetch = makeFetch(server);
-        await fetch('/hello', { redirect: 'follow' }).expect(200, /Login with Mock Provider/);
+        await fetch('/hello', { redirect: 'manual' }).expect(401, /Login with Mock Provider/);
     });
 
     it('should proxy a request for an authorized user', async function() {

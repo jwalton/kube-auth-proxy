@@ -293,5 +293,15 @@ And then visit [http://localhost:5050](http://localhost:5050).
 ## Run locally in the shell
 
 - Create a file called "./config/kube-auth-proxy.yaml".
+- Create a config/kube-auth-proxy.yaml file:
+
+        domain: localhost:5050
+        secureCookies: false
+        auth:
+          github:
+            clientID: 'YOUR-CLIENT-ID'
+            clientSecret: 'YOUR-CLIENT-SECRET'
+
+- Run `npm start`.
 
 Copyright 2019 Jason Walton

@@ -19,7 +19,7 @@ export interface AuthModule {
      * @param redirectUrl - The URL to redirect to after authentication is
      *   successful.
      */
-    getLoginButton(config: SanitizedKubeAuthProxyConfig, redirectUrl: string): string;
+    getLoginButton(redirectUrl: string): string;
 
     /**
      * Returns a middleware which can authenticate users.  This middleware may

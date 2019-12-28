@@ -26,7 +26,7 @@ export function isEnabled(config: SanitizedKubeAuthProxyConfig) {
     return config.auth?.github != null;
 }
 
-export function getLoginButton(_config: SanitizedKubeAuthProxyConfig, targetUrl: string): string {
+export function getLoginButton(targetUrl: string): string {
     return `<a href="/kube-auth-proxy/github?redirect=${targetUrl}">Login with Github</a>`;
 }
 
