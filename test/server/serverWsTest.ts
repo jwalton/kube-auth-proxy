@@ -38,7 +38,7 @@ describe('Websocket Server Tests', function() {
     let proxyTarget: CompiledProxyTarget;
     let client: WebSocket | undefined;
 
-    before(async function() {
+    beforeAll(async function() {
         const app = express();
         app.get('/hello', (_req, res) => res.send('Hello World!'));
 
@@ -66,7 +66,7 @@ describe('Websocket Server Tests', function() {
         });
     });
 
-    after(function() {
+    afterAll(function() {
         testServer.close();
     });
 

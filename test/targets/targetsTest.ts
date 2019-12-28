@@ -1,5 +1,4 @@
 import chai from 'chai';
-import 'mocha';
 import { compileProxyTarget } from '../../src/targets/index';
 import { createMockK8sApi } from '../fixtures/mockK8sApi';
 

@@ -1,5 +1,4 @@
 import chai from 'chai';
-import 'mocha';
 import { validateProxyTarget } from '../../src/targets/validation';
 
 const { expect } = chai;

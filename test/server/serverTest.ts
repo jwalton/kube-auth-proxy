@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import express from 'express';
 import http from 'http';
-import 'mocha';
 import pEvent from 'p-event';
 import { makeFetch } from 'supertest-fetch';
 import { DEFAULT_COOKIE_NAME } from '../../src/config';
@@ -36,7 +35,7 @@ describe('Server Tests', function() {
     let server: http.Server | undefined;
     let proxyTarget: CompiledProxyTarget;
 
-    before(async function() {
+    beforeAll(async function() {
         const app = express();
         app.get('/hello', (_req, res) => res.send('Hello World!'));
         app.get('/authorization', (req, res) => {
@@ -57,7 +56,7 @@ describe('Server Tests', function() {
         };
     });
 
-    after(function() {
+    afterAll(function() {
         testServer.close();
     });
 

@@ -1,7 +1,6 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { promises as fs } from 'fs';
-import 'mocha';
 import sinon from 'sinon';
 import {
     DEFAULT_COOKIE_NAME,
