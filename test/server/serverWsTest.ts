@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import express from 'express';
 import http from 'http';
-import 'mocha';
 import { AddressInfo } from 'net';
 import pEvent from 'p-event';
 import WebSocket from 'ws';
@@ -57,8 +56,13 @@ describe('Websocket Server Tests', function() {
             validateCertificate: true,
         };
 
-        wss.on('connection', connection => {
-            connection.send('Hello');
+        wss.on('connection', (connection, req) => {
+            connection.send('{"message": "Hello"}');
+            connection.on('message', data => {
+                if (data === 'headers') {
+                    connection.send(JSON.stringify(req.headers));
+                }
+            });
         });
     });
 
@@ -95,7 +99,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should proxy a request for an authorized user', async function() {
+    it('should proxy a ws request for an authorized user', async function() {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -109,13 +113,13 @@ describe('Websocket Server Tests', function() {
             },
         });
 
-        const message = await pEvent(client as any, 'message');
-        expect(message).to.equal('Hello');
+        const message: string = await pEvent(client as any, 'message');
+        expect(JSON.parse(message)).to.eql({ message: 'Hello' });
 
         client.close();
     });
 
-    it('should proxy a request for an authenticated user, for a target with no conditions', async function() {
+    it('should proxy a ws request for an authenticated user, for a target with no conditions', async function() {
         const target = {
             ...proxyTarget,
             conditions: [],
@@ -134,13 +138,13 @@ describe('Websocket Server Tests', function() {
             },
         });
 
-        const message = await pEvent(client as any, 'message');
-        expect(message).to.equal('Hello');
+        const message: string = await pEvent(client as any, 'message');
+        expect(JSON.parse(message)).to.eql({ message: 'Hello' });
 
         client.close();
     });
 
-    it('should deny a request for an unauthorized user', async function() {
+    it('should deny a ws request for an unauthorized user', async function() {
         const myProxyTarget = {
             ...proxyTarget,
             conditions: [{ allowedUsers: 'someone-else' } as any],
@@ -186,6 +190,40 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should add a bearer token');
-    it('should add a basic auth');
+    it('should add a authorization header', async function() {
+        const target: CompiledProxyTarget = {
+            ...proxyTarget,
+            conditions: [],
+            headers: {
+                authorization: 'Bearer mr.token',
+            },
+        };
+
+        server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([target]), [
+            new MockAuthModule(),
+        ]);
+        await pEvent(server, 'listening');
+
+        const address = server.address() as AddressInfo;
+        client = new WebSocket(`ws://localhost:${address.port}/`, {
+            headers: {
+                host: 'mock.test.com',
+                cookie: makeSessionCookieForUser(SESSION_SECRET, USER_JWALTON),
+                test: 'foo',
+            },
+        });
+
+        const message: string = await pEvent(client as any, 'message');
+        expect(JSON.parse(message)).to.eql({ message: 'Hello' });
+
+        client.send('headers');
+        const headersMessage: string = await pEvent(client as any, 'message');
+        const headers = JSON.parse(headersMessage);
+
+        // Should add an authorization header.
+        expect(headers.authorization).to.equal('Bearer mr.token');
+
+        // Make sure we don't clobber existing headers.
+        expect(headers.test).to.equal('foo');
+    });
 });
