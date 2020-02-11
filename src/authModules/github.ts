@@ -1,7 +1,7 @@
 import Octokit from '@octokit/rest';
 import express from 'express';
 import * as passportLib from 'passport';
-import GitHubStrategy from 'passport-github';
+import { Strategy as GitHubStrategy } from 'passport-github2';
 import '../server/express-types';
 import { KubeAuthProxyUser, SanitizedKubeAuthProxyConfig } from '../types';
 import * as log from '../utils/logger';
@@ -50,13 +50,19 @@ export function authenticationMiddleware(
                 scope: ['user:email', 'read:org'],
                 passReqToCallback: true,
             },
-            (_req, accessToken, _refreshToken, profile, cb) => {
+            (
+                _req: express.Request,
+                accessToken: string,
+                _refreshToken: string,
+                profile: any,
+                cb: (err?: Error | null, user?: object, info?: object) => void
+            ) => {
                 getOrgsAndTeamsForUser(accessToken)
                     .then(({ orgs, teams }) => {
                         const emails = profile.emails
-                            ? profile.emails
-                                  .filter(email => (email as any).verified)
-                                  .map(email => email.value)
+                            ? (profile.emails
+                                  .filter((email: any) => (email as any).verified)
+                                  .map((email: any) => email.value) as string[])
                             : [];
 
                         const user: GithubUser = {
