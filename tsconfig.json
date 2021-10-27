@@ -11,6 +11,9 @@
         "outDir": "./dist",
         "stripInternal": true,
 
+        // Workaround for bugs in @types/express.
+        "skipLibCheck": true,
+
         /* Strict Type-Checking Options */
         "strict": true /* Enable all strict type-checking options. */,
         // "strictNullChecks": true,              /* Enable strict null checks. */

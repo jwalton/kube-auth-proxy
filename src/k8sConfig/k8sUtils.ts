@@ -38,7 +38,7 @@ export function parseSecretSpecifier(defaultNamespace: string, spec: string, sou
         try {
             secretSpec.secretRegex = new RegExp(secretSpec.secretRegex);
         } catch (err) {
-            throw new Error(`Invalid secretRegex in ${source}: ${err.toString()}`);
+            throw new Error(`Invalid secretRegex in ${source}: ${err}`);
         }
     } else if (secretSpec.secretRegex instanceof RegExp) {
         // OK

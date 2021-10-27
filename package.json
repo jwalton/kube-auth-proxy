@@ -22,7 +22,7 @@
         "lint": "npm run lint:source && npm run lint:tests",
         "lint:source": "eslint --ext .ts --ext .tsx src",
         "lint:tests": "eslint --ext .ts --ext .tsx test",
-        "prepare": "npm run build",
+        "prepare": "npm run build && husky install",
         "prepublishOnly": "npm run build && npm test",
         "semantic-release": "semantic-release"
     },
@@ -61,37 +61,32 @@
         "@types/chai": "^4.2.5",
         "@types/chai-as-promised": "^7.1.2",
         "@types/client-sessions": "^0.8.0",
-        "@types/express": "^4.17.2",
+        "@types/express": "^4.17.13",
         "@types/http-proxy": "^1.17.2",
-        "@types/jest": "^24.0.25",
+        "@types/jest": "^27.0.2",
         "@types/lodash": "^4.14.149",
-        "@types/node": "^10.17.6",
+        "@types/node": "^16.11.6",
         "@types/passport": "^1.0.2",
         "@types/passport-github2": "^1.2.4",
-        "@types/yargs": "^13.0.3",
-        "@typescript-eslint/eslint-plugin": "^2.9.0",
-        "@typescript-eslint/parser": "^2.9.0",
+        "@types/yargs": "^17.0.4",
+        "@typescript-eslint/eslint-plugin": "^5.2.0",
+        "@typescript-eslint/parser": "^5.2.0",
         "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
         "coveralls": "^3.0.9",
-        "eslint": "^6.7.1",
-        "eslint-config-prettier": "^6.7.0",
-        "husky": "^3.1.0",
-        "jest": "^24.9.0",
-        "lint-staged": "^9.5.0",
+        "eslint": "^8.1.0",
+        "eslint-config-prettier": "^8.3.0",
+        "husky": "^7.0.4",
+        "jest": "^27.3.1",
+        "lint-staged": "^11.2.6",
         "p-event": "^4.1.0",
-        "prettier": "^1.19.1",
-        "pretty-quick": "^2.0.1",
-        "semantic-release": "^15.13.31",
+        "prettier": "^2.4.1",
+        "pretty-quick": "^3.1.1",
+        "semantic-release": "^18.0.0",
         "supertest-fetch": "^1.4.1",
-        "ts-jest": "^24.2.0",
-        "ts-node": "^8.5.2",
-        "typescript": "^3.7.2"
-    },
-    "husky": {
-        "hooks": {
-            "pre-commit": "pretty-quick --staged && npm run test:precommit"
-        }
+        "ts-jest": "^27.0.7",
+        "ts-node": "^10.4.0",
+        "typescript": "^4.4.4"
     },
     "dependencies": {
         "@kubernetes/client-node": "^0.11.0",
@@ -110,6 +105,6 @@
         "winston": "^3.2.1",
         "winston-format-debug": "^1.0.3",
         "ws": "^6.1.0",
-        "yargs": "^15.0.2"
+        "yargs": "^17.2.1"
     }
 }

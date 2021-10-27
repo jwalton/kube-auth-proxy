@@ -97,7 +97,7 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
             validateProxyTarget(target);
         } catch (err) {
             throw new Error(
-                `Error validating static config defaultTargets[${index}]: ${err.message}.`
+                `Error validating static config defaultTargets[${index}]: ${(err as Error).message}.`
             );
         }
     });

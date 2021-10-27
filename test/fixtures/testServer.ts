@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import WebSocket from 'ws';
+import { getServerPort } from '../../src/utils/server';
 
 /**
  * Convenience function to start a new HTTP server.
@@ -9,7 +10,7 @@ import WebSocket from 'ws';
 export async function makeTestServer(
     requestListener?: http.RequestListener
 ): Promise<{ server: http.Server; wss: WebSocket.Server; port: number }> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let app = requestListener;
 
         if (!app) {
@@ -25,12 +26,8 @@ export async function makeTestServer(
         const wss = new WebSocket.Server({ server });
 
         server.on('listening', () => {
-            const address = server.address();
-            if (typeof address === 'string') {
-                reject(new Error(`Got string ${address} as address?`));
-            } else {
-                resolve({ server, wss, port: address.port });
-            }
+            const port = getServerPort(server);
+            resolve({ server, wss, port });
         });
     });
 }

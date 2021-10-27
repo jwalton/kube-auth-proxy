@@ -30,7 +30,8 @@ export function parseCommandLineArgs(): Partial<RawKubeAuthProxyConfig> & {
                 '(This is mainly for development.)',
         })
         .help('h')
-        .alias('h', 'help').argv;
+        .alias('h', 'help')
+        .parseSync(process.argv.slice(2));
 
     return {
         config: options.config,

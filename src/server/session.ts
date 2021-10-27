@@ -42,7 +42,7 @@ export function wsSessionMiddleware(config: SanitizedKubeAuthProxyConfig) {
             next();
         } catch (err) {
             if (!done) {
-                next(err);
+                next(err as Error);
             }
         }
     };

@@ -1,4 +1,4 @@
-import Octokit from '@octokit/rest';
+import { Octokit } from '@octokit/rest';
 import express from 'express';
 import * as passportLib from 'passport';
 import { Strategy as GitHubStrategy } from 'passport-github2';
@@ -80,7 +80,7 @@ export function authenticationMiddleware(
 
                         cb(null, user);
                     })
-                    .catch(err => {
+                    .catch((err) => {
                         log.error(err, 'Error fetching orgs and teams');
                         cb(err);
                     });
@@ -122,6 +122,11 @@ export function authenticationMiddleware(
         '/kube-auth-proxy/github/callback',
         passport.authenticate('github', { failureRedirect: '/' }),
         (req, res) => {
+            if (typeof req.query.state != 'string') {
+                res.send('Missing state');
+                return;
+            }
+
             const state = new URLSearchParams(req.query.state);
             const redirectTarget = state.get('rd');
 
@@ -142,10 +147,10 @@ export function authenticationMiddleware(
  */
 async function getOrgsAndTeamsForUser(accessToken: string) {
     const octokit = new Octokit({ auth: accessToken });
-    const orgs = (await octokit.orgs.listForAuthenticatedUser()).data.map(org =>
+    const orgs = (await octokit.orgs.listForAuthenticatedUser()).data.map((org) =>
         org.login.toLowerCase()
     );
-    const teams = (await octokit.teams.listForAuthenticatedUser()).data.map(team =>
+    const teams = (await octokit.teams.listForAuthenticatedUser()).data.map((team) =>
         `${team.name}@${team.organization.login}`.toLowerCase()
     );
     return { orgs, teams };

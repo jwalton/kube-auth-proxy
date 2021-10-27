@@ -183,7 +183,7 @@ class ConfigWatcher extends EventEmitter {
                 try {
                     onErr(err);
                 } catch (err) {
-                    this.emit('error', err);
+                    this.emit('error', err as Error);
                 }
             } else {
                 this.emit('error', err);

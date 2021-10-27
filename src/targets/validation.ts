@@ -8,7 +8,7 @@ const PROXY_TARGET_CRD = jsYaml.safeLoad(
     fs.readFileSync(path.resolve(__dirname, '../../crds/kube-auth-proxy-proxy-target-crd.yaml'), {
         encoding: 'utf-8',
     })
-);
+) as any;
 const PROXY_TARGET_SCHEMA = PROXY_TARGET_CRD.spec.validation.openAPIV3Schema;
 
 // Internally we add "key" and "source" right when we read the object.

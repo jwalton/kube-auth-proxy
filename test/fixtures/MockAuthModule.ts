@@ -9,8 +9,9 @@ export default class MockAuthModule implements AuthModule {
         const router = express.Router();
 
         router.get('/kube-auth-proxy/mockauth', (req, res, next) => {
-            if (req.query.username) {
-                req.login({ type: 'mock-auth', username: req.query.username, emails: [] }, err => {
+            const username = req.query.username;
+            if (username && typeof username === 'string') {
+                req.login({ type: 'mock-auth', username, emails: [] }, (err: any) => {
                     if (err) {
                         next(err);
                     } else {

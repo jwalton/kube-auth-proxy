@@ -5,6 +5,7 @@ import { backendErrorCount } from '../metrics';
 import { SanitizedKubeAuthProxyConfig } from '../types';
 import { targetList } from '../ui/targetList';
 import * as log from '../utils/logger';
+import { getServerPort } from '../utils/server';
 import authentication from './authentication';
 import { authorizationMiddleware } from './authorization';
 import { findTargetMiddleware, ProxyTargetFinder } from './findTarget';
@@ -83,8 +84,7 @@ export function startServer(
     server.listen(config.port);
 
     server.on('listening', () => {
-        const address = server.address();
-        const port = typeof address === 'string' ? address : address.port;
+        const port = getServerPort(server);
         log.info(`Listening on port ${port}`);
     });
 
