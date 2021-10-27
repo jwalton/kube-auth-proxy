@@ -1,9 +1,12 @@
-.git
 .github
-.nyc_output
-config
+.husky
+.vscode
 coverage
 dist
-examples
+.dockerignore
+.eslintrc.js
+.git
+.gitignore
+Dockerfile
 node_modules
 test

@@ -22,9 +22,8 @@
         "lint": "npm run lint:source && npm run lint:tests",
         "lint:source": "eslint --ext .ts --ext .tsx src",
         "lint:tests": "eslint --ext .ts --ext .tsx test",
-        "prepare": "npm run build && husky install",
-        "prepublishOnly": "npm run build && npm test",
-        "semantic-release": "semantic-release"
+        "prepare": "husky install",
+        "prepublishOnly": "npm run build && npm test"
     },
     "lint-staged": {
         "src/**/*.ts": [
@@ -73,7 +72,6 @@
         "@typescript-eslint/parser": "^5.2.0",
         "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
-        "coveralls": "^3.0.9",
         "eslint": "^8.1.0",
         "eslint-config-prettier": "^8.3.0",
         "husky": "^7.0.4",
@@ -82,7 +80,6 @@
         "p-event": "^4.1.0",
         "prettier": "^2.4.1",
         "pretty-quick": "^3.1.1",
-        "semantic-release": "^18.0.0",
         "supertest-fetch": "^1.4.1",
         "ts-jest": "^27.0.7",
         "ts-node": "^10.4.0",
