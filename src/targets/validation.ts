@@ -4,7 +4,7 @@ import path from 'path';
 import Ajv from 'ajv';
 import { RawProxyTarget } from './index';
 
-const PROXY_TARGET_CRD = jsYaml.safeLoad(
+const PROXY_TARGET_CRD = jsYaml.load(
     fs.readFileSync(path.resolve(__dirname, '../../crds/kube-auth-proxy-proxy-target-crd.yaml'), {
         encoding: 'utf-8',
     })

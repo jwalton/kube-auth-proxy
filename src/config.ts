@@ -16,7 +16,7 @@ export async function readConfig(
     configFile: string = './config/kube-auth-proxy.yaml'
 ): Promise<RawKubeAuthProxyConfig> {
     const configContents = (await fs.readFile(configFile, { encoding: 'utf-8' })) as string;
-    const config = jsYaml.safeLoad(configContents) as RawKubeAuthProxyConfig;
+    const config = jsYaml.load(configContents) as RawKubeAuthProxyConfig;
     return config;
 }
 
