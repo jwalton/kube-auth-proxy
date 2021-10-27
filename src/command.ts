@@ -24,8 +24,8 @@ async function start() {
         log.setLevel(config.logLevel);
     }
 
-    const enabledAuthModles = authModules.filter(module => module.isEnabled(config));
-    log.info(`Enabled authentication modules: ${enabledAuthModles.map(m => m.name).join(', ')}`);
+    const enabledAuthModles = authModules.filter((module) => module.isEnabled(config));
+    log.info(`Enabled authentication modules: ${enabledAuthModles.map((m) => m.name).join(', ')}`);
 
     let kubeConfig: k8s.KubeConfig | undefined;
     if (!cliOptions.noK8s) {
@@ -60,6 +60,6 @@ async function start() {
     startMetricsServer(config.metricsPort || DEFAULT_METRICS_PORT);
 }
 
-start().catch(err => {
+start().catch((err) => {
     log.error(err);
 });

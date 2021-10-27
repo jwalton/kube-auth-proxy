@@ -30,13 +30,13 @@ const USER_JWALTON: KubeAuthProxyUser = {
     emails: ['jwalton@service.com'],
 };
 
-describe('Server Tests', function() {
+describe('Server Tests', function () {
     let testServer: http.Server;
     let testPort: number;
     let server: http.Server | undefined;
     let proxyTarget: CompiledProxyTarget;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
         const app = express();
         app.get('/hello', (_req, res) => res.send('Hello World!'));
         app.get('/authorization', (req, res) => {
@@ -57,17 +57,17 @@ describe('Server Tests', function() {
         };
     });
 
-    afterAll(function() {
+    afterAll(function () {
         testServer.close();
     });
 
-    afterEach(function() {
+    afterEach(function () {
         if (server) {
             server.close();
         }
     });
 
-    it('should require authentication', async function() {
+    it('should require authentication', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -77,7 +77,7 @@ describe('Server Tests', function() {
         await fetch('/hello', { redirect: 'manual' }).expect(401, /Login with Mock Provider/);
     });
 
-    it('should proxy a request for an authorized user', async function() {
+    it('should proxy a request for an authorized user', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -92,7 +92,7 @@ describe('Server Tests', function() {
         }).expect(200, 'Hello World!');
     });
 
-    it('should login a user', async function() {
+    it('should login a user', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -107,7 +107,7 @@ describe('Server Tests', function() {
         }).expect(302);
     });
 
-    it('should proxy a request for an authenticated user, for a target with no conditions', async function() {
+    it('should proxy a request for an authenticated user, for a target with no conditions', async function () {
         const target = {
             ...proxyTarget,
             conditions: [],
@@ -127,7 +127,7 @@ describe('Server Tests', function() {
         }).expect(200, 'Hello World!');
     });
 
-    it('should deny a request for an unauthorized user', async function() {
+    it('should deny a request for an unauthorized user', async function () {
         const myProxyTarget = {
             ...proxyTarget,
             conditions: [{ allowedEmails: ['someone-else@foo.com'] }],
@@ -146,7 +146,7 @@ describe('Server Tests', function() {
         }).expect(403);
     });
 
-    it('should return a 404 if the host header does not resolve to a target', async function() {
+    it('should return a 404 if the host header does not resolve to a target', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -161,7 +161,7 @@ describe('Server Tests', function() {
         }).expect(404);
     });
 
-    it('should add a authorization header', async function() {
+    it('should add a authorization header', async function () {
         const target: CompiledProxyTarget = {
             ...proxyTarget,
             conditions: [],

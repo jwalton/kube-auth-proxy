@@ -67,7 +67,7 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
     if (
         config.namespaces &&
         (!Array.isArray(config.namespaces) ||
-            !config.namespaces.every(namespace => typeof namespace === 'string'))
+            !config.namespaces.every((namespace) => typeof namespace === 'string'))
     ) {
         throw new Error(`namespaces must be an array of strings`);
     }
@@ -97,7 +97,9 @@ export function validateConfig(config: RawKubeAuthProxyConfig): SanitizedKubeAut
             validateProxyTarget(target);
         } catch (err) {
             throw new Error(
-                `Error validating static config defaultTargets[${index}]: ${(err as Error).message}.`
+                `Error validating static config defaultTargets[${index}]: ${
+                    (err as Error).message
+                }.`
             );
         }
     });

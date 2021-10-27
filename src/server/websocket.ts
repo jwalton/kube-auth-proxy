@@ -18,7 +18,7 @@ export function makeWebsocketHandler(
     const proxy = httpProxy.createProxyServer({});
 
     return (req: http.IncomingMessage, socket: net.Socket, head: any) => {
-        session(req, err => {
+        session(req, (err) => {
             if (err) {
                 log.error(err, 'Error reading session for websocket connection.');
                 metrics.connectionErrorCount.inc({ type: 'ws' });
@@ -46,7 +46,7 @@ export function makeWebsocketHandler(
             }
             (req as any).target = target;
 
-            authorization(req, err => {
+            authorization(req, (err) => {
                 if (err) {
                     log.info(
                         `Rejecting unauthorized user ${user.username} for service ${target.host}.`
@@ -68,7 +68,7 @@ export function makeWebsocketHandler(
                     };
                 }
 
-                proxy.ws(req, socket, head, { target: target.wsTargetUrl }, err => {
+                proxy.ws(req, socket, head, { target: target.wsTargetUrl }, (err) => {
                     if (err) {
                         metrics.backendErrorCount.inc({ type: 'ws' });
                         if ((err as any).code !== 'ECONNREFUSED') {

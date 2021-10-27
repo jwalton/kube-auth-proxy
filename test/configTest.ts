@@ -11,8 +11,8 @@ import { SanitizedKubeAuthProxyConfig } from '../src/types';
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-describe('config parser', function() {
-    it('should fill in default values', async function() {
+describe('config parser', function () {
+    it('should fill in default values', async function () {
         const config = validateConfig({
             domain: 'mydomain.com',
             auth: {
@@ -46,7 +46,7 @@ describe('config parser', function() {
         expect(config.sessionSecret).to.be.string;
     });
 
-    it('should error for an invalid config', async function() {
+    it('should error for an invalid config', async function () {
         expect(() => validateConfig({} as any)).to.throw('domain required in configuration.');
     });
 });

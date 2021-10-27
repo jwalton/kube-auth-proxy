@@ -56,7 +56,7 @@ class K8sWatcher<T> extends EventEmitter {
                         break;
                 }
             },
-            err => {
+            (err) => {
                 if (err) {
                     this.emit('error', err);
                 } else {

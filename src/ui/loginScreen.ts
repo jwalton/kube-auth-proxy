@@ -2,7 +2,7 @@ import { AuthModule } from '../authModules/AuthModule';
 
 export function loginScreen(props: { authModules: AuthModule[]; redirectUrl: string }) {
     const { authModules, redirectUrl } = props;
-    const loginButtons = authModules.map(mod => mod.getLoginButton(redirectUrl));
+    const loginButtons = authModules.map((mod) => mod.getLoginButton(redirectUrl));
 
     return `
 <html>

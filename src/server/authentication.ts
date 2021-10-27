@@ -48,8 +48,7 @@ export default function authentication(
 
     router.get('/kube-auth-proxy/login', (req, res) => {
         const redirect = req.query.redirect || '/';
-        const redirectUrl = (typeof redirect === "string") ? redirect : '/';
-
+        const redirectUrl = typeof redirect === 'string' ? redirect : '/';
 
         //; TODO: Could probably come up with a prettier login screen.  :P
         res.set('content-type', 'text/html');

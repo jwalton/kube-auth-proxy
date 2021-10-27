@@ -150,7 +150,7 @@ class ConfigWatcher extends EventEmitter {
 
         log.info(`Watching ${type}s for updates (${watchUrl})`);
 
-        watcher.on('updated', obj => {
+        watcher.on('updated', (obj) => {
             if (obj.metadata?.name) {
                 const namespace = obj.metadata.namespace || 'default';
                 const name = obj.metadata.name;
@@ -170,7 +170,7 @@ class ConfigWatcher extends EventEmitter {
             }
         });
 
-        watcher.on('deleted', secret => {
+        watcher.on('deleted', (secret) => {
             if (secret.metadata?.name) {
                 const namespace = secret.metadata.namespace || 'default';
                 const source = toSource(type, namespace, secret.metadata.name);
@@ -178,7 +178,7 @@ class ConfigWatcher extends EventEmitter {
             }
         });
 
-        watcher.on('error', err => {
+        watcher.on('error', (err) => {
             if (onErr) {
                 try {
                     onErr(err);
@@ -227,13 +227,13 @@ class ConfigWatcher extends EventEmitter {
             this._deleteSource(source);
         } else {
             Promise.all(
-                rawTargets.map(target =>
+                rawTargets.map((target) =>
                     compileProxyTarget(k8sApi, target, defaultConditions, {
                         defaultNamespace: namespace,
                     })
                 )
             )
-                .then(compiledTargets => {
+                .then((compiledTargets) => {
                     if (this._objectRevision[source] !== revision) {
                         log.debug(`Ignoring stale update for ${source}`);
                         staleUpdates.inc();
@@ -256,7 +256,7 @@ class ConfigWatcher extends EventEmitter {
                         const deleted = _.differenceBy(
                             exisitng,
                             compiledTargets,
-                            target => target.key
+                            (target) => target.key
                         );
                         for (const target of deleted) {
                             this.emit('deleted', target);
@@ -270,7 +270,7 @@ class ConfigWatcher extends EventEmitter {
                         }
                     }
                 })
-                .catch(err => {
+                .catch((err) => {
                     log.error(err);
                     serviceUpdateErrors.inc();
                 });
@@ -308,15 +308,15 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
         const githubAllowedOrgs = annotations[annotationNames.GITHUB_ALLOWED_ORGS];
         if (githubAllowedOrgs) {
             conditions = conditions || {};
-            conditions.githubAllowedOrganizations = parseCommaDelimitedList(
-                githubAllowedOrgs
-            ).map(str => str.toLowerCase());
+            conditions.githubAllowedOrganizations = parseCommaDelimitedList(githubAllowedOrgs).map(
+                (str) => str.toLowerCase()
+            );
         }
 
         const githubAllowedTeams = annotations[annotationNames.GITHUB_ALLOWED_TEAMS];
         if (githubAllowedTeams) {
             conditions = conditions || {};
-            conditions.githubAllowedTeams = parseCommaDelimitedList(githubAllowedTeams).map(str =>
+            conditions.githubAllowedTeams = parseCommaDelimitedList(githubAllowedTeams).map((str) =>
                 str.toLowerCase()
             );
         }
@@ -324,7 +324,7 @@ function serviceToTargets(service: k8s.V1Service, source: string): RawProxyTarge
         const githubAllowedUsers = annotations[annotationNames.GITHUB_ALLOWED_USERS];
         if (githubAllowedUsers) {
             conditions = conditions || {};
-            conditions.githubAllowedUsers = parseCommaDelimitedList(githubAllowedUsers).map(str =>
+            conditions.githubAllowedUsers = parseCommaDelimitedList(githubAllowedUsers).map((str) =>
                 str.toLowerCase()
             );
         }

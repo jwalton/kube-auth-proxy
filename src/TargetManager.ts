@@ -46,7 +46,7 @@ export default class TargetManager implements ProxyTargetFinder {
         if (options.kubeConfig) {
             this._configWatch = new ConfigWatcher(options.kubeConfig, defaultConditions, options);
 
-            this._configWatch.on('updated', target => {
+            this._configWatch.on('updated', (target) => {
                 const unchanged =
                     this._targetByKey[target.key] &&
                     _.isEqual(this._targetByKey[target.key], target);
@@ -55,13 +55,13 @@ export default class TargetManager implements ProxyTargetFinder {
                     const verb = this._targetByKey[target.key] ? 'Updating' : 'Adding';
                     log.info(
                         `${verb} target ${target.host} => ${target.targetUrl} (from ${target.source})\n` +
-                            target.conditions.map(c => `  ${conditionToString(c)}\n`)
+                            target.conditions.map((c) => `  ${conditionToString(c)}\n`)
                     );
                     this._targetByKey[target.key] = target;
                     this._rebuildConfigsByHost();
                 }
             });
-            this._configWatch.on('deleted', target => {
+            this._configWatch.on('deleted', (target) => {
                 if (this._targetByKey[target.key]) {
                     log.info(
                         `Removing target ${target.host} => ${target.targetUrl} (from ${target.source})`
@@ -71,7 +71,7 @@ export default class TargetManager implements ProxyTargetFinder {
                 this._rebuildConfigsByHost();
             });
 
-            this._configWatch.on('error', err => {
+            this._configWatch.on('error', (err) => {
                 log.error(err, 'Unexpected error from configuration watcher.');
                 process.exit(1);
             });

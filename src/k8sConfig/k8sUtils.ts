@@ -97,8 +97,8 @@ export function decodeSecret(base64Data: string) {
 function getSecret(k8sApi: k8s.CoreV1Api, namespace: string, secretName: string) {
     return k8sApi
         .readNamespacedSecret(secretName, namespace)
-        .then(response => response.body)
-        .catch(err => {
+        .then((response) => response.body)
+        .catch((err) => {
             if (err?.response?.statusCode === 404) {
                 throw new Error(`Secret ${name} not found.`);
             } else {

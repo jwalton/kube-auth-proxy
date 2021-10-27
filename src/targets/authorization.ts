@@ -16,7 +16,7 @@ export function authorizeUserForTarget(user: KubeAuthProxyUser, target: Compiled
         authorized = true;
     } else {
         authorized = target.conditions.some(
-            condition => authorizeEmails(user, condition) && authorizeGithub(user, condition)
+            (condition) => authorizeEmails(user, condition) && authorizeGithub(user, condition)
         );
     }
 
@@ -33,7 +33,9 @@ function authorizeEmails(user: KubeAuthProxyUser, condition: Condition) {
 
     const matchEmailDomains =
         !condition.emailDomains ||
-        user.emails.some(email => condition.emailDomains?.some(domain => email.endsWith(domain)));
+        user.emails.some((email) =>
+            condition.emailDomains?.some((domain) => email.endsWith(domain))
+        );
 
     return matchAllowedEmails && matchEmailDomains;
 }

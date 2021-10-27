@@ -3,8 +3,8 @@ import { validateProxyTarget } from '../../src/targets/validation';
 
 const { expect } = chai;
 
-describe('targets - validation', function() {
-    it('should validate a target', function() {
+describe('targets - validation', function () {
+    it('should validate a target', function () {
         expect(() =>
             validateProxyTarget({
                 key: 'test',
@@ -18,7 +18,7 @@ describe('targets - validation', function() {
         ).to.not.throw();
     });
 
-    it('should throw for an invalid target', function() {
+    it('should throw for an invalid target', function () {
         expect(() =>
             validateProxyTarget({
                 key: 'test',

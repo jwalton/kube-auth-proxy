@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 
 export function createMockK8sApi(objects: { secrets?: k8s.V1Secret[] }) {
-    const processedSecrets = (objects.secrets || []).map(s => {
+    const processedSecrets = (objects.secrets || []).map((s) => {
         const secret = {
             ...s,
         };
@@ -17,7 +17,7 @@ export function createMockK8sApi(objects: { secrets?: k8s.V1Secret[] }) {
     return {
         async readNamespacedSecret(secretName: string, namespace: string) {
             const result = processedSecrets.find(
-                secret =>
+                (secret) =>
                     secret.metadata?.name === secretName && secret.metadata?.namespace === namespace
             );
             if (!result) {

@@ -166,14 +166,14 @@ export function parseTargetsFromFile(
         return [];
     }
 
-    const uniqueTargets = _.uniqBy(targets, target => target.host);
+    const uniqueTargets = _.uniqBy(targets, (target) => target.host);
     if (uniqueTargets.length !== targets.length) {
         log.warn(
             `${source}/${filename} has multiple targets with the same host - some will be ignored.`
         );
     }
 
-    uniqueTargets.forEach(target => {
+    uniqueTargets.forEach((target) => {
         if (isServiceNameTargetSpecifier(target.to)) {
             target.to.namespace = target.to.namespace || namespace;
         }
@@ -204,7 +204,7 @@ export function getConditions(target: RawCondition | undefined, defaultCondition
 
     if (emailDomains) {
         answer.push({
-            emailDomains: emailDomains.map(domain =>
+            emailDomains: emailDomains.map((domain) =>
                 domain.startsWith('@') ? domain : `@${domain}`
             ),
         });
@@ -237,8 +237,8 @@ function getTargetPortNumber(service: k8s.V1Service, targetPortName: string | nu
     } else if (targetPortName) {
         const foundPortObj =
             service.spec?.ports &&
-            (service.spec.ports.find(port => port.name === targetPortName) ||
-                service.spec.ports.find(port => `${port.port}` === targetPortName));
+            (service.spec.ports.find((port) => port.name === targetPortName) ||
+                service.spec.ports.find((port) => `${port.port}` === targetPortName));
 
         if (foundPortObj) {
             answer = foundPortObj.port;

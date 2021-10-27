@@ -4,9 +4,9 @@ import { createMockK8sApi } from '../fixtures/mockK8sApi';
 
 const { expect } = chai;
 
-describe('targets', function() {
-    describe('compileProxyTarget', function() {
-        it('should compile a target', async function() {
+describe('targets', function () {
+    describe('compileProxyTarget', function () {
+        it('should compile a target', async function () {
             const target = await compileProxyTarget(
                 undefined,
                 {
@@ -31,7 +31,7 @@ describe('targets', function() {
             });
         });
 
-        it('should add default conditions if the target defines no conditions', async function() {
+        it('should add default conditions if the target defines no conditions', async function () {
             const target = await compileProxyTarget(
                 undefined,
                 {
@@ -54,7 +54,7 @@ describe('targets', function() {
             ]);
         });
 
-        it('should ignore default conditions if the target defines conditions', async function() {
+        it('should ignore default conditions if the target defines conditions', async function () {
             const target = await compileProxyTarget(
                 undefined,
                 {
@@ -80,7 +80,7 @@ describe('targets', function() {
             ]);
         });
 
-        it('should add a bearer token header', async function() {
+        it('should add a bearer token header', async function () {
             const k8sApi = createMockK8sApi({
                 secrets: [
                     {
@@ -127,7 +127,7 @@ describe('targets', function() {
             });
         });
 
-        it('should add a basic auth header from a secret', async function() {
+        it('should add a basic auth header from a secret', async function () {
             const k8sApi = createMockK8sApi({
                 secrets: [
                     {
@@ -165,7 +165,7 @@ describe('targets', function() {
             );
         });
 
-        it('should add a basic auth header from a litteral', async function() {
+        it('should add a basic auth header from a litteral', async function () {
             const target = await compileProxyTarget(
                 undefined,
                 {

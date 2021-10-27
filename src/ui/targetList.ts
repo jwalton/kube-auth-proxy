@@ -8,8 +8,8 @@ export function targetList(props: {
     targets: CompiledProxyTarget[];
 }) {
     const { user, domain } = props;
-    const targets = _.sortBy(props.targets, target => target.host);
-    const haveGlobalTargets = targets.some(t => t.conditions.length === 0);
+    const targets = _.sortBy(props.targets, (target) => target.host);
+    const haveGlobalTargets = targets.some((t) => t.conditions.length === 0);
 
     return `
 <html>
@@ -65,7 +65,7 @@ export function targetList(props: {
         <div class="content">
             <h1>Available Services</h1>
             <ul>
-                ${targets.map(target => renderTarget(domain, target)).join('\n')}
+                ${targets.map((target) => renderTarget(domain, target)).join('\n')}
             </ul>
 
             ${

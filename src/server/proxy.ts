@@ -35,7 +35,7 @@ export default function proxyMiddleware(): express.RequestHandler {
             req,
             res,
             { target: proxyTarget.targetUrl, secure: proxyTarget.validateCertificate },
-            err => {
+            (err) => {
                 if (err) {
                     next(err);
                 }

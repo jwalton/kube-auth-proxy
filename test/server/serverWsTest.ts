@@ -31,7 +31,7 @@ const USER_JWALTON: KubeAuthProxyUser = {
     emails: ['jwalton@service.com'],
 };
 
-describe('Websocket Server Tests', function() {
+describe('Websocket Server Tests', function () {
     let testServer: http.Server;
     let testPort: number;
     let server: http.Server | undefined;
@@ -39,7 +39,7 @@ describe('Websocket Server Tests', function() {
     let proxyTarget: CompiledProxyTarget;
     let client: WebSocket | undefined;
 
-    beforeAll(async function() {
+    beforeAll(async function () {
         const app = express();
         app.get('/hello', (_req, res) => res.send('Hello World!'));
 
@@ -59,7 +59,7 @@ describe('Websocket Server Tests', function() {
 
         wss.on('connection', (connection, req) => {
             connection.send('{"message": "Hello"}');
-            connection.on('message', data => {
+            connection.on('message', (data) => {
                 if (data === 'headers') {
                     connection.send(JSON.stringify(req.headers));
                 }
@@ -67,11 +67,11 @@ describe('Websocket Server Tests', function() {
         });
     });
 
-    afterAll(function() {
+    afterAll(function () {
         testServer.close();
     });
 
-    afterEach(function() {
+    afterEach(function () {
         if (server) {
             server.close();
         }
@@ -80,7 +80,7 @@ describe('Websocket Server Tests', function() {
         }
     });
 
-    it('should require authentication', async function() {
+    it('should require authentication', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -100,7 +100,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should proxy a ws request for an authorized user', async function() {
+    it('should proxy a ws request for an authorized user', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -120,7 +120,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should proxy a ws request for an authenticated user, for a target with no conditions', async function() {
+    it('should proxy a ws request for an authenticated user, for a target with no conditions', async function () {
         const target = {
             ...proxyTarget,
             conditions: [],
@@ -145,7 +145,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should deny a ws request for an unauthorized user', async function() {
+    it('should deny a ws request for an unauthorized user', async function () {
         const myProxyTarget = {
             ...proxyTarget,
             conditions: [{ allowedEmails: ['someone-else@foo.com'] }],
@@ -170,7 +170,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should return a 404 if the host header does not resolve to a target', async function() {
+    it('should return a 404 if the host header does not resolve to a target', async function () {
         server = startServer(DEFAULT_CONFIG, mockProxyTargetManager([proxyTarget]), [
             new MockAuthModule(),
         ]);
@@ -191,7 +191,7 @@ describe('Websocket Server Tests', function() {
         client.close();
     });
 
-    it('should add a authorization header', async function() {
+    it('should add a authorization header', async function () {
         const target: CompiledProxyTarget = {
             ...proxyTarget,
             conditions: [],
