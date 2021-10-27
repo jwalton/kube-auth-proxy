@@ -15,7 +15,7 @@ const PROXY_TARGET_SCHEMA = PROXY_TARGET_CRD.spec.validation.openAPIV3Schema;
 PROXY_TARGET_SCHEMA.properties.target.properties.key = { type: 'string' };
 PROXY_TARGET_SCHEMA.properties.target.properties.source = { type: 'string' };
 
-const ajv = new Ajv({ strictKeywords: true });
+const ajv = new Ajv({ strict: true });
 const proxyTargetValidator = ajv.compile(PROXY_TARGET_SCHEMA);
 
 export function validateProxyTarget(target: RawProxyTarget) {

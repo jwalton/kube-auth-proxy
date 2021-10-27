@@ -28,6 +28,6 @@ describe('targets - validation', function () {
                     targetPort: 'web',
                 },
             } as any)
-        ).to.throw(`Invalid ProxyTarget: should have required property 'host'`);
+        ).to.throw(`Invalid ProxyTarget: must have required property 'host'`);
     });
 });
