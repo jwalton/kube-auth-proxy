@@ -104,7 +104,7 @@
         "promise-tools": "^2.1.0",
         "winston": "^3.2.1",
         "winston-format-debug": "^1.0.3",
-        "ws": "^6.1.0",
+        "ws": "^8.2.3",
         "yargs": "^17.2.1"
     }
 }

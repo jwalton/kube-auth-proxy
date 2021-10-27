@@ -60,7 +60,7 @@ describe('Websocket Server Tests', function () {
         wss.on('connection', (connection, req) => {
             connection.send('{"message": "Hello"}');
             connection.on('message', (data) => {
-                if (data === 'headers') {
+                if (data.toString() === 'headers') {
                     connection.send(JSON.stringify(req.headers));
                 }
             });

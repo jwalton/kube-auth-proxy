@@ -13,6 +13,19 @@
             "program": "${workspaceFolder}/dist/command.js",
             "outFiles": ["${workspaceFolder}/dist/*.js"],
             "args": ["-v"]
+        },
+        {
+            "name": "Jest Tests (Current File)",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceRoot}/node_modules/.bin/jest",
+                "--runInBand",
+                "${relativeFile}"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
         }
     ]
 }
