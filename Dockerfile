@@ -1,6 +1,6 @@
 # Dockerfile for Loop.
 # `base` image with all runtime OS dependencies
-FROM node:12-alpine as base
+FROM node:16-alpine as base
 RUN apk --no-cache add bash tini
 WORKDIR /opt/app/
 
