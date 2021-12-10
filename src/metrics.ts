@@ -18,7 +18,9 @@ const version = new prometheus.Gauge({
 function metricsEndpoint() {
     return (_req: express.Request, res: express.Response) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end(prometheus.register.metrics());
+        prometheus.register.metrics().then((body) => {
+            res.end(body);
+        });
     };
 }
 
